@@ -6,7 +6,7 @@ cp .env.example .env
 ```
 + B2: Docker
 ```angular2html
-docker-compose up -d
+docker compose up -d
 ```
 + B3: Listen port 9090
 ```angular2html
