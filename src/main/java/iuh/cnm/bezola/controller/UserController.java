@@ -1,7 +1,9 @@
 package iuh.cnm.bezola.controller;
 
+import iuh.cnm.bezola.dto.UserDto;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +21,10 @@ public class UserController {
     //crud
     //create
     @PostMapping("/users")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<User> createUser(@RequestBody @Valid UserDto userDto) {
         try {
-            User _user = userService.createUser(user);
-            return new ResponseEntity<>(_user, HttpStatus.CREATED);
+            User user = userService.createUser(userDto);
+            return new ResponseEntity<>(user, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

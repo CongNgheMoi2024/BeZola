@@ -12,3 +12,7 @@ docker compose up -d
 ```angular2html
 http://localhost:9090/heartbeat
 ```
+## API
+```angular2html
+http://localhost:9090/swagger-api.html
+```
