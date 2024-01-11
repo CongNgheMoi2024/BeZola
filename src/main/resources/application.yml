@@ -14,11 +14,21 @@ jwt:
 
 spring:
   data:
+#    mongodb:
+#      uri: mongodb://root:123456@localhost:27017/zola_db?authSource=admin
+#      username: root
+#      password: 123456
+#      host: localhost
+#      port: 27017
+#      database: zola_db
+#      authentication-database: admin
     mongodb:
-      uri: mongodb://root:123456@localhost:27017/zola_db?authSource=admin
-      username: root
-      password: 123456
-      host: localhost
-      port: 27017
-      database: zola_db
+      uri: mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@localhost:${MONGODB_LOCAL_PORT}/zola_db?authSource=admin
+      username: ${MONGODB_USER}
+      password: ${MONGODB_PASSWORD}
+      host: ${MONGODB_HOST}
+      port: ${MONGODB_LOCAL_PORT}
+      database: ${MONGODB_DATABASE}
       authentication-database: admin
+  messages:
+    basename: i18n/messages
