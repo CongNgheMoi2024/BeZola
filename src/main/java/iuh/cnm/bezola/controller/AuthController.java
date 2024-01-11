@@ -63,7 +63,7 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
         try {
             LoginResponse loginResponse = userService.login(loginDTO.getPhone(), loginDTO.getPassword(),
-                    String.valueOf(loginDTO.getRoleId() == null ? 1 : loginDTO.getRoleId()));
+                    loginDTO.getRoleId() == null ? "1" : loginDTO.getRoleId());
             return ResponseEntity.ok(loginResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(LoginResponse.builder()
