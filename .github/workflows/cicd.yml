@@ -29,7 +29,7 @@ jobs:
     runs-on: [bezola]
     steps:
       - name: Pull Image from docker hub
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/bezola-app:latest
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/bezola-app
       - name: Delete old containers
         run: docker rm -f bezola
       - name: Run docker compose
