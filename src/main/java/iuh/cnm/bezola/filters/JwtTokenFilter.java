@@ -72,13 +72,29 @@ public class JwtTokenFilter extends OncePerRequestFilter{
         final List<Pair<String, String>> bypassTokens = Arrays.asList(
                 Pair.of(String.format("%s/auth/login", apiPrefix), "POST"),
                 Pair.of(String.format("%s/auth/register", apiPrefix), "POST"),
-                Pair.of(String.format("%s/auth/refresh", apiPrefix), "POST")
+                Pair.of(String.format("%s/auth/refresh", apiPrefix), "POST"),
+
+                // Swagger
+                Pair.of("/api-docs","GET"),
+                Pair.of("/api-docs/**","GET"),
+                Pair.of("/swagger-resources","GET"),
+                Pair.of("/swagger-resources/**","GET"),
+                Pair.of("/configuration/ui","GET"),
+                Pair.of("/configuration/security","GET"),
+                Pair.of("/swagger-ui/**","GET"),
+                Pair.of("/swagger-ui.html", "GET"),
+                Pair.of("/swagger-ui/index.html", "GET"),
+                Pair.of("/swagger-api.html", "GET")
         );
+
+        String requestPath = request.getServletPath();
+        String requestMethod = request.getMethod();
 
         for (Pair<String, String> token : bypassTokens) {
             String path = token.getFirst();
             String method = token.getSecond();
-            if (request.getServletPath().contains(path) && request.getMethod().equals(method)) {
+            if (requestPath.matches(path.replace("**", ".*"))
+                    && requestMethod.equalsIgnoreCase(method)) {
                 return true;
             }
         }
