@@ -1,6 +1,5 @@
 package iuh.cnm.bezola.responses;
 
-import iuh.cnm.bezola.models.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +9,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterResponse {
+public class ApiResponse<T> {
+    private T data;
     private String message;
-    private User user;
+    private int status;
+    private boolean success;
+    private T error;
 }
