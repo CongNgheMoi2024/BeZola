@@ -13,6 +13,7 @@ jobs:
       - uses: adrielcodeco/docker-compose-run-action@v1
         with:
           compose-file: './docker-compose.yml'
+          service: 'bezola-app'
         env:
           MONGODB_USER: 'root'
           MONGODB_PASSWORD: '123456'
