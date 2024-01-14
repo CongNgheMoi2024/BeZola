@@ -10,17 +10,6 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
-      - uses: adrielcodeco/docker-compose-run-action@v1
-        with:
-          compose-file: './docker-compose.yml'
-        env:
-          MONGODB_USER: 'root'
-          MONGODB_PASSWORD: '123456'
-          MONGODB_DATABASE: 'zola_db'
-          MONGODB_LOCAL_PORT: '27017'
-          MONGODB_DOCKER_PORT: '27017'
-          SPRING_LOCAL_PORT: '9090'
-          SPRING_DOCKER_PORT: '8080'
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
@@ -44,4 +33,4 @@ jobs:
       - name: Delete old containers
         run: docker rm -f bezola
       - name: Run docker compose
-        run: docker-compose up -d
+        run: docker-compose -f ./docker-compose.yml up -d
