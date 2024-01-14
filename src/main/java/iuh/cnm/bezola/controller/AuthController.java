@@ -6,7 +6,7 @@ import iuh.cnm.bezola.dto.UserDto;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.LoginResponse;
-import iuh.cnm.bezola.service.UserService;
+import iuh.cnm.bezola.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,7 @@ import java.util.List;
 @RequestMapping("${api.prefix}/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final UserService userService;
+    private final AuthService userService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> createUser(@Valid @RequestBody UserDto userDTO, BindingResult result) {
