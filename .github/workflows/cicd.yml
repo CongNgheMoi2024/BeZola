@@ -23,13 +23,13 @@ jobs:
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/bezola-app .
       - name: Publish image to docker hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/bezola-app:latest
-      - name: Copy source to code to ec2
+      - name: Copy docker-compose to code to ec2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_KEY }}
-          source: "."
+          source: "docker-compose.yml"
           target: "/home/ubuntu/bezola-app"
 
   deploy:
