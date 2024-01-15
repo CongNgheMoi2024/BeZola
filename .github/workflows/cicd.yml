@@ -33,5 +33,4 @@ jobs:
       - name: Delete old containers
         run: docker rm -f bezola
       - name: Run docker compose
-        # run: docker-compose -f /home/ubuntu/_work/BeZola/BeZola/docker-compose.yml up -d
-        run: ls
+        run: docker-compose -f /home/ubuntu/_work/BeZola/BeZola/docker-compose.yml up -d
