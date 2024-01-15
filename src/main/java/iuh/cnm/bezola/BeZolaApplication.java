@@ -15,6 +15,7 @@ public class BeZolaApplication {
     }
 
 
+    @Bean
     public CommandLineRunner commandLineRunner(RoleRepository roleRepository){
         return args -> {
             Role role = new Role("1", "USER");
