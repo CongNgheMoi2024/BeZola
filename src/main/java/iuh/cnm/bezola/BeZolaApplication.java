@@ -14,8 +14,6 @@ public class BeZolaApplication {
         SpringApplication.run(BeZolaApplication.class, args);
     }
 
-
-    @Bean
     public CommandLineRunner commandLineRunner(RoleRepository roleRepository){
         return args -> {
             Role role = new Role("1", "USER");
