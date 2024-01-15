@@ -34,4 +34,4 @@ jobs:
         run: docker rm -f bezola
       - name: Run docker compose
         # run: docker-compose -f /home/ubuntu/_work/BeZola/BeZola/docker-compose.yml up -d
-        run: pwd
+        run: ll
