@@ -23,6 +23,14 @@ jobs:
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/bezola-app .
       - name: Publish image to docker hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/bezola-app:latest
+      - name: Copy source to code to ec2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "."
+          target: "/home/ubuntu/bezola-app"
 
   deploy:
     needs: build
@@ -33,4 +41,4 @@ jobs:
       - name: Delete old containers
         run: docker rm -f bezola
       - name: Run docker compose
-        run: docker-compose -f /home/ubuntu/_work/BeZola/BeZola/docker-compose.yml up -d
+        run: docker-compose -f /home/ubuntu/bezola-app/docker-compose.yml up -d
