@@ -39,4 +39,16 @@ public class UserController {
             );
         }
     }
+
+    @GetMapping("/users")
+    public ResponseEntity<ApiResponse<?>> getAllUsers() {
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .data(userService.getAllUsers())
+                        .message("Get all users success")
+                        .status(200)
+                        .success(true)
+                        .build()
+        );
+    }
 }

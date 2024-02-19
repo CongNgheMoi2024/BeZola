@@ -73,10 +73,15 @@ public class AuthService {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(phone, password, existingUser.getAuthorities());
         authenticationManager.authenticate(authenticationToken);
+
+        existingUser.setOnlineStatus(true);
+        userRepository.save(existingUser);
+
         return LoginResponse.builder()
                 .message("Login success")
                 .token(jwtTokenUtil.generateToken(existingUser))
                 .refreshToken(jwtTokenUtil.generateRefreshToken(new HashMap<>(), existingUser))
+                .user(existingUser)
                 .build();
     }
 

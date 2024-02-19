@@ -1,6 +1,7 @@
 package iuh.cnm.bezola.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import iuh.cnm.bezola.models.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,4 +16,5 @@ public class LoginResponse {
     private String token;
     @JsonProperty("refresh_token")
     private String refreshToken;
+    private User user;
 }
