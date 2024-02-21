@@ -32,6 +32,8 @@ public class User implements UserDetails {
     private LocalDate birthday;
     private boolean onlineStatus;
     private Role role;
+    //list friend
+    private List<String> friends;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

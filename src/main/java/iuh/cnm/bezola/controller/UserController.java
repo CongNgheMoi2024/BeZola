@@ -1,15 +1,14 @@
 package iuh.cnm.bezola.controller;
 
+import iuh.cnm.bezola.exceptions.DataAlreadyExistsException;
+import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("${api.prefix}")
@@ -50,5 +49,27 @@ public class UserController {
                         .success(true)
                         .build()
         );
+    }
+
+    @PostMapping("/users/{id}/add-friend/{friendId}")
+    public ResponseEntity<ApiResponse<?>> addFriend(@PathVariable String id, @PathVariable String friendId) {
+        try {
+            userService.addFriend(id, friendId);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .message("Add friend success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (DataNotFoundException | DataAlreadyExistsException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
     }
 }

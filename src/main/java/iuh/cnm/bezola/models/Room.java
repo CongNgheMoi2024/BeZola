@@ -16,4 +16,5 @@ public class Room {
     private String chatId;
     private String senderId;
     private String recipientId;
+    private String lastMessage;
 }
