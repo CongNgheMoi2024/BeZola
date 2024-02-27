@@ -6,16 +6,22 @@ import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
 
     public User getUserByPhone(String phone) throws UserException {
         Optional<User> optionalUser = userRepository.findByPhone(phone);
@@ -54,5 +60,34 @@ public class UserService {
         } else {
             throw new DataAlreadyExistsException("Friend already added with id: " + friendId);
         }
+    }
+
+    public List<User> getFriendByName(String userId, String name) throws DataNotFoundException {
+        // Tìm kiếm user bằng id
+        User user = mongoTemplate.findById(userId, User.class);
+        if (user == null) {
+            throw new DataNotFoundException("User not found with id: " + userId);
+        }
+
+        // Chuẩn hóa tên tìm kiếm để không phân biệt dấu
+        String normalizedSearchName = removeAccents(name).toLowerCase();
+        // Tạo truy vấn để tìm bạn bè dựa trên danh sách friends của user và so khớp tên
+        Query query = new Query();
+
+        // Tạo điều kiện lọc id trong danh sách bạn bè
+        Criteria idCriteria = Criteria.where("id").in(user.getFriends());
+        // Tạo điều kiện so khớp tên
+        Criteria nameCriteria = Criteria.where("name").regex(normalizedSearchName, "i");
+
+        // Kết hợp các điều kiện sử dụng andOperator
+        query.addCriteria(new Criteria().andOperator(idCriteria, nameCriteria));
+
+        return mongoTemplate.find(query, User.class);
+    }
+
+    public static String removeAccents(String text) {
+        String nfdNormalizedString = Normalizer.normalize(text, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(nfdNormalizedString).replaceAll("");
     }
 }
