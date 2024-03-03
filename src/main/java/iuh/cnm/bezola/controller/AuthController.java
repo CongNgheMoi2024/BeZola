@@ -51,14 +51,8 @@ public class AuthController {
                 );
             }
             User user = userService.createUser(userDTO);
-            return ResponseEntity.ok(
-                    ApiResponse.builder()
-                            .data(user)
-                            .message("Register success")
-                            .status(200)
-                            .success(true)
-                            .build()
-            );
+            LoginDTO loginDTO = LoginDTO.builder().phone(user.getPhone()).password(userDTO.getPassword()).build();
+            return login(loginDTO);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     ApiResponse.builder()
@@ -84,11 +78,7 @@ public class AuthController {
                             .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .error(
-                            LoginResponse.builder()
-                                    .message(e.getMessage())
-                                    .build()
-                    )
+                    .error(e.getMessage())
                     .status(401)
                     .success(false)
                     .build());
@@ -107,11 +97,7 @@ public class AuthController {
                             .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .error(
-                            LoginResponse.builder()
-                                    .message(e.getMessage())
-                                    .build()
-                    )
+                    .error(e.getMessage())
                     .status(401)
                     .success(false)
                     .build());

@@ -12,9 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class LoginResponse {
-    private String message;
-    private String token;
+    @JsonProperty("access_token")
+    private String accessToken;
     @JsonProperty("refresh_token")
     private String refreshToken;
-    private User user;
+    @JsonProperty("user_id")
+    private String userId;
+    private String phone;
 }

@@ -1,5 +1,7 @@
 package iuh.cnm.bezola.controller;
 
+import iuh.cnm.bezola.dto.ChangePasswordDTO;
+import iuh.cnm.bezola.dto.ForgotPasswordDTO;
 import iuh.cnm.bezola.exceptions.DataAlreadyExistsException;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
@@ -11,12 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${api.prefix}")
+@RequestMapping("${api.prefix}/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
 
-    @GetMapping("/users/{phone}")
+    @GetMapping("/{phone}")
     public ResponseEntity<ApiResponse<?>> getUserByPhone(@PathVariable String phone) {
         try {
             User user = userService.getUserByPhone(phone);
@@ -38,8 +40,29 @@ public class UserController {
             );
         }
     }
+    @PutMapping("/change-password/{phone}")
+    public ResponseEntity<?> changePassword(@PathVariable String phone,@RequestBody ChangePasswordDTO changePasswordDTO) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.changePassword(phone,changePasswordDTO))
+                            .message("Update user password success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
 
-    @GetMapping("/users")
+    @GetMapping("")
     public ResponseEntity<ApiResponse<?>> getAllUsers() {
         return ResponseEntity.ok(
                 ApiResponse.builder()
@@ -51,7 +74,7 @@ public class UserController {
         );
     }
 
-    @PostMapping("/users/{id}/add-friend/{friendId}")
+    @PostMapping("/{id}/add-friend/{friendId}")
     public ResponseEntity<ApiResponse<?>> addFriend(@PathVariable String id, @PathVariable String friendId) {
         try {
             userService.addFriend(id, friendId);
