@@ -16,7 +16,7 @@ public class LoginResponse {
     private String accessToken;
     @JsonProperty("refresh_token")
     private String refreshToken;
-    @JsonProperty("user_id")
-    private String userId;
+    @JsonProperty("user")
+    private User user;
     private String phone;
 }

@@ -80,7 +80,7 @@ public class AuthService {
         return LoginResponse.builder()
                 .accessToken(jwtTokenUtil.generateToken(existingUser))
                 .refreshToken(jwtTokenUtil.generateRefreshToken(new HashMap<>(), existingUser))
-                .userId(existingUser.getId())
+                .user(existingUser)
                 .phone(existingUser.getPhone())
                 .build();
     }
@@ -98,7 +98,7 @@ public class AuthService {
         return LoginResponse.builder()
                 .accessToken(jwtTokenUtil.generateToken(existingUser))
                 .refreshToken(refreshTokenDTO.getRefreshToken())
-                .userId(existingUser.getId())
+                .user(existingUser)
                 .phone(existingUser.getPhone())
                 .build();
     }
