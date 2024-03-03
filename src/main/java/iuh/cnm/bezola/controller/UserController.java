@@ -95,4 +95,26 @@ public class UserController {
             );
         }
     }
+
+    @GetMapping("/users/{id}/friends/{name}")
+    public ResponseEntity<ApiResponse<?>> getFriendByName(@PathVariable String id, @PathVariable String name) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.getFriendByName(id, name))
+                            .message("Get friend success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
 }
