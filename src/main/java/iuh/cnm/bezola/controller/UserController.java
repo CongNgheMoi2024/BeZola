@@ -96,7 +96,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/users/{id}/friends/{name}")
+    @GetMapping("/{id}/friends/{name}")
     public ResponseEntity<ApiResponse<?>> getFriendByName(@PathVariable String id, @PathVariable String name) {
         try {
             return ResponseEntity.ok(
