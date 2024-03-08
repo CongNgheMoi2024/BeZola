@@ -1,5 +1,6 @@
 package iuh.cnm.bezola.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -28,6 +29,7 @@ public class User implements UserDetails {
     private String password;
     private String phone;
     private String avatar;
+    private String imageCover;
     private boolean sex;
     private LocalDate birthday;
     private boolean onlineStatus;

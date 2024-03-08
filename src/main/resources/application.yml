@@ -24,3 +24,8 @@ spring:
       authentication-database: admin
   messages:
     basename: i18n/messages
+
+
+accessKey : AKIA3FLD4U2PXYEXK677
+secretKey : 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
+bucketName : images-111

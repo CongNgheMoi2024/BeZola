@@ -16,13 +16,17 @@ public class BeZolaApplication {
         SpringApplication.run(BeZolaApplication.class, args);
     }
 
-
+    @Bean
     public CommandLineRunner commandLineRunner(RoleRepository roleRepository){
         return args -> {
-            Role role = new Role("1", "USER");
-            Role role1 = new Role("2", "ADMIN");
-            roleRepository.save(role);
-            roleRepository.save(role1);
+            if(roleRepository.findById("1").isEmpty()){
+                Role role = new Role("1", "USER");
+                roleRepository.save(role);
+            }
+            if(roleRepository.findById("2").isEmpty()){
+                Role role1 = new Role("2", "ADMIN");
+                roleRepository.save(role1);
+            }
         };
     }
 

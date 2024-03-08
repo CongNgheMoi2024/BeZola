@@ -2,6 +2,8 @@ package iuh.cnm.bezola.service;
 
 import iuh.cnm.bezola.dto.ChangePasswordDTO;
 import iuh.cnm.bezola.dto.ForgotPasswordDTO;
+import iuh.cnm.bezola.dto.UpdateUserDTO;
+import iuh.cnm.bezola.dto.UserDto;
 import iuh.cnm.bezola.exceptions.DataAlreadyExistsException;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
@@ -123,5 +125,49 @@ public class UserService {
         String nfdNormalizedString = Normalizer.normalize(text, Normalizer.Form.NFD);
         Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
         return pattern.matcher(nfdNormalizedString).replaceAll("");
+    }
+
+    public User getUserById(String id) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("User not found with id: " + id);
+        }
+        return optionalUser.get();
+    }
+
+    public void updateAvatarUser(String id, String avatar) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("User not found with id: " + id);
+        }
+        User user = optionalUser.get();
+        user.setAvatar(avatar);
+        userRepository.save(user);
+    }
+
+    public void updateImageCoverUser(String id, String imageUrl) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("User not found with id: " + id);
+        }
+        User user = optionalUser.get();
+        user.setImageCover(imageUrl);
+        userRepository.save(user);
+    }
+
+    public User update(String phone, UpdateUserDTO updateUserDTO) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findByPhone(phone);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("User not found with phone: " + phone);
+        }
+        User user = optionalUser.get();
+        if(updateUserDTO.getName() != null && !updateUserDTO.getName().isEmpty()) {
+            user.setName(updateUserDTO.getName());
+        }
+        if(updateUserDTO.getBirthday() != null) {
+            user.setBirthday(updateUserDTO.getBirthday());
+        }
+        user.setSex(updateUserDTO.isSex());
+        return userRepository.save(user);
     }
 }
