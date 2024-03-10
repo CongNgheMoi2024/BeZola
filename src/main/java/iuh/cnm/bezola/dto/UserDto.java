@@ -15,7 +15,8 @@ public class UserDto {
 //    @Email(message = "Email is invalid")
 //    private String email;
     @NotEmpty(message = "Password is required")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d]{8,}$", message = "Password must be at least 8 characters, including 1 uppercase letter, 1 lowercase letter and 1 number")
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$",
+            message = "Password must be at least 6 characters, including letters, numbers, and special characters")
     private String password;
     @NotEmpty(message = "Retype password is required")
     @JsonProperty("retype_password")
