@@ -47,6 +47,29 @@ public class UserController {
             .credentialsProvider(() -> AwsBasicCredentials.create(accessKey, secretKey))
             .build();
 
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<?>> getUserProfileHandler(@RequestHeader("Authorization") String jwt) {
+        try {
+            User user = userService.findUserProfileByJwt(jwt);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(user)
+                            .message("Get user profile success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (UserException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+
     @GetMapping("/{phone}")
     public ResponseEntity<ApiResponse<?>> getUserByPhone(@PathVariable String phone) {
         try {

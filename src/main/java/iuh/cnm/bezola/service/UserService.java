@@ -9,6 +9,7 @@ import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.repository.UserRepository;
+import iuh.cnm.bezola.utils.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -28,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final MongoTemplate mongoTemplate;
+    private final JwtTokenUtil jwtTokenUtil;
 
     public User getUserByPhone(String phone) throws UserException {
         Optional<User> optionalUser = userRepository.findByPhone(phone);
@@ -169,5 +171,16 @@ public class UserService {
         }
         user.setSex(updateUserDTO.isSex());
         return userRepository.save(user);
+    }
+
+    public User findUserProfileByJwt(String jwt) throws UserException {
+        jwt = jwt.substring(7);
+        String phone = jwtTokenUtil.extractPhone(jwt);
+        System.out.println("phone: " + phone);
+        User user = getUserByPhone(phone);
+        if(user == null){
+            throw new UserException("User not found with phone: " + phone);
+        }
+        return user;
     }
 }
