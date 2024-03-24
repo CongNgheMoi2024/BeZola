@@ -7,8 +7,10 @@ import iuh.cnm.bezola.dto.UserDto;
 import iuh.cnm.bezola.exceptions.DataAlreadyExistsException;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
+import iuh.cnm.bezola.models.PhoneBook;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.repository.UserRepository;
+import iuh.cnm.bezola.responses.UserResponse;
 import iuh.cnm.bezola.utils.JwtTokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +39,15 @@ public class UserService {
             throw new UserException("User not found with phone: " + phone);
         }
         return optionalUser.get();
+    }
+    public void savePhoneBooks(String jwt, List<PhoneBook> phoneBooks) throws UserException {
+        User user = findUserProfileByJwt(jwt);
+        user.setPhoneBooks(phoneBooks);
+        userRepository.save(user);
+    }
+    public List<PhoneBook> getPhoneBookByPhone(String phone) {
+        Optional<User> optionalUser = userRepository.findByPhone(phone);
+        return optionalUser.map(User::getPhoneBooks).orElse(null);
     }
 
     public User updateUser(String phone, ForgotPasswordDTO forgotPasswordDTO) throws DataNotFoundException {
@@ -176,11 +187,55 @@ public class UserService {
     public User findUserProfileByJwt(String jwt) throws UserException {
         jwt = jwt.substring(7);
         String phone = jwtTokenUtil.extractPhone(jwt);
-        System.out.println("phone: " + phone);
         User user = getUserByPhone(phone);
         if(user == null){
             throw new UserException("User not found with phone: " + phone);
         }
         return user;
+    }
+    private String getNameFromPhoneBooks(List<PhoneBook> phoneBooks, String phone,String name) {
+        if (phoneBooks == null) {
+            return name;
+        }
+        for (PhoneBook phoneBook : phoneBooks) {
+            if (phoneBook.getPhone().equals(phone)) {
+                return phoneBook.getName();
+            }
+        }
+        return name;
+    }
+
+    public List<UserResponse> getFriends(String jwt) throws UserException {
+        User user = findUserProfileByJwt(jwt);
+        List<UserResponse> userResponses = new ArrayList<>();
+        List<PhoneBook> phoneBooks = user.getPhoneBooks();
+        for (String friendId : user.getFriends()) {
+            User friend = userRepository.findById(friendId).orElse(null);
+            if(user!=null){
+                userResponses.add(UserResponse.builder()
+                .id(friend.getId())
+                .name(getNameFromPhoneBooks(phoneBooks, friend.getPhone(), friend.getName()))
+                .phone(friend.getPhone())
+                .avatar(friend.getAvatar()).build());
+            }
+        }
+        return userResponses;
+    }
+
+    public List<UserResponse> getFriendsFromPhoneBook(String jwt) throws UserException {
+        User user = findUserProfileByJwt(jwt);
+        List<UserResponse> userResponses = new ArrayList<>();
+        List<PhoneBook> phoneBooks = user.getPhoneBooks();
+        for (PhoneBook phoneBook : phoneBooks) {
+            User friend = userRepository.findByPhone(phoneBook.getPhone()).orElse(null);
+            if(friend!=null){
+                userResponses.add(UserResponse.builder()
+                .id(friend.getId())
+                .name(getNameFromPhoneBooks(phoneBooks, friend.getPhone(), friend.getName()))
+                .phone(friend.getPhone())
+                .avatar(friend.getAvatar()).build());
+            }
+        }
+        return userResponses;
     }
 }

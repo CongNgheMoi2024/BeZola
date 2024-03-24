@@ -92,6 +92,48 @@ public class UserController {
             );
         }
     }
+    @GetMapping("/phone-book/friends")
+    public ResponseEntity<ApiResponse<?>> getFriendsFromPhoneBook(@RequestHeader("Authorization") String jwt) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.getFriendsFromPhoneBook(jwt))
+                            .message("Get friends from phone book success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (UserException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @GetMapping("/friends")
+    public ResponseEntity<ApiResponse<?>> getFriends(@RequestHeader("Authorization") String jwt) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.getFriends(jwt))
+                            .message("Get friends success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (UserException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
     @PutMapping("/update/{phone}")
     public ResponseEntity<?> updateUser(@PathVariable String phone,@RequestBody UpdateUserDTO updateUserDTO) {
         try {

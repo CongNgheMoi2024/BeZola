@@ -36,6 +36,8 @@ public class User implements UserDetails {
     private Role role;
     //list friend
     private List<String> friends;
+    //list phone book
+    private List<PhoneBook> phoneBooks;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
