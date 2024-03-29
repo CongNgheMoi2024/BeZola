@@ -33,6 +33,10 @@ public class UserService {
     private final MongoTemplate mongoTemplate;
     private final JwtTokenUtil jwtTokenUtil;
 
+    public boolean isUserExists(String phone) {
+        return userRepository.existsByPhone(phone);
+    }
+
     public User getUserByPhone(String phone) throws UserException {
         Optional<User> optionalUser = userRepository.findByPhone(phone);
         if (optionalUser.isEmpty()) {

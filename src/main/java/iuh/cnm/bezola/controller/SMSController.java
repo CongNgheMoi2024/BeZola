@@ -2,9 +2,11 @@ package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.dto.ForgotPasswordDTO;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
+import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.OTP;
 import iuh.cnm.bezola.models.SMS;
 import iuh.cnm.bezola.models.StoreOTP;
+import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.service.SMSService;
 import iuh.cnm.bezola.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,11 @@ public class SMSController {
 
     @PostMapping("/phoneNumber")
     public ResponseEntity<String> smsSubmit(@RequestBody SMS sms){
+        String phone = sms.getPhoneNo().replace("+84","0");
+        boolean user = userService.isUserExists(phone);
+        if(user){
+            return new ResponseEntity<>("Phone number already exists", HttpStatus.BAD_REQUEST);
+        }
         try {
             smsService.send(sms);
         }catch (Exception e){
