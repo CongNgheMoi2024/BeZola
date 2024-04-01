@@ -211,6 +211,9 @@ public class UserService {
 
     public List<UserResponse> getFriends(String jwt) throws UserException {
         User user = findUserProfileByJwt(jwt);
+        if(user.getFriends()==null){
+            return new ArrayList<>();
+        }
         List<UserResponse> userResponses = new ArrayList<>();
         List<PhoneBook> phoneBooks = user.getPhoneBooks();
         for (String friendId : user.getFriends()) {
@@ -230,6 +233,9 @@ public class UserService {
         User user = findUserProfileByJwt(jwt);
         List<UserResponse> userResponses = new ArrayList<>();
         List<PhoneBook> phoneBooks = user.getPhoneBooks();
+        if(phoneBooks==null){
+            return new ArrayList<>();
+        }
         for (PhoneBook phoneBook : phoneBooks) {
             User friend = userRepository.findByPhone(phoneBook.getPhone()).orElse(null);
             if(friend!=null){

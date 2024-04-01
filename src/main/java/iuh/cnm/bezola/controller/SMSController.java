@@ -9,6 +9,8 @@ import iuh.cnm.bezola.models.StoreOTP;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.service.SMSService;
 import iuh.cnm.bezola.service.UserService;
+import iuh.cnm.bezola.utils.OTPQueue;
+import iuh.cnm.bezola.utils.OTPRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,8 +19,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("${api.prefix}")
@@ -33,6 +38,7 @@ public class SMSController {
     private UserService userService;
 
     private final String TOPIC_DESTINATION = "/lesson/sms";
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
 
     @PostMapping("/phoneNumber")
     public ResponseEntity<String> smsSubmit(@RequestBody SMS sms){
@@ -42,7 +48,13 @@ public class SMSController {
             return new ResponseEntity<>("Phone number already exists", HttpStatus.BAD_REQUEST);
         }
         try {
-            smsService.send(sms);
+            executor.submit(() -> {
+                try {
+                    smsService.send(sms);
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }catch (Exception e){
             return new ResponseEntity<>("Something problem!", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -53,7 +65,13 @@ public class SMSController {
     @PostMapping("/forget-password")
     public ResponseEntity<String> sms(@RequestBody SMS sms){
         try {
-            smsService.send(sms);
+            executor.submit(() -> {
+                try {
+                    smsService.send(sms);
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }catch (Exception e){
             return new ResponseEntity<>("Something problem!", HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -62,7 +80,9 @@ public class SMSController {
     }
     @PutMapping("/otp-forget/{phone}")
     public ResponseEntity<?> verifyForget(@PathVariable String phone,@RequestBody ForgotPasswordDTO updatePasswordDTO) throws DataNotFoundException {
-        if(updatePasswordDTO.getOtp() == StoreOTP.getOtp()) {
+        phone = phone.replace("0","+84");
+        OTPRequest otpRequest = new OTPRequest(updatePasswordDTO.getOtp(),phone);
+        if(OTPQueue.verifyOTP(otpRequest)){
             userService.updateUser(phone,updatePasswordDTO);
             return ResponseEntity.ok("Verified forget password OTP successfully");
         }
@@ -70,8 +90,8 @@ public class SMSController {
     }
 
     @PostMapping("/otp")
-    public ResponseEntity<?> verifyOTP(@RequestBody OTP otp) {
-        if(otp.getOtp() == StoreOTP.getOtp()) {
+    public ResponseEntity<?> verifyOTP(@RequestBody OTPRequest otp) {
+        if (OTPQueue.verifyOTP(otp)) {
             return ResponseEntity.ok("OTP verified");
         }
         return ResponseEntity.badRequest().body("OTP not verified");

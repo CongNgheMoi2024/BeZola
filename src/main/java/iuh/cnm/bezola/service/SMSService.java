@@ -5,6 +5,8 @@ import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import iuh.cnm.bezola.models.SMS;
 import iuh.cnm.bezola.models.StoreOTP;
+import iuh.cnm.bezola.utils.OTPQueue;
+import iuh.cnm.bezola.utils.OTPRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 
@@ -29,7 +31,7 @@ public class SMSService {
                 "Your OTP is: " + otp)
                 .create();
 
-        StoreOTP.setOtp(otp);
+        OTPQueue.enqueue(new OTPRequest(otp, sms.getPhoneNo()));
     }
 
     public void recive(MultiValueMap<String,String> smsCallback){
