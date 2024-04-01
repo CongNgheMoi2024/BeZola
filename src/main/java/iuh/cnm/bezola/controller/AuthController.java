@@ -3,10 +3,13 @@ package iuh.cnm.bezola.controller;
 import iuh.cnm.bezola.dto.LoginDTO;
 import iuh.cnm.bezola.dto.RefreshTokenDTO;
 import iuh.cnm.bezola.dto.UserDto;
+import iuh.cnm.bezola.models.OTP;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.LoginResponse;
 import iuh.cnm.bezola.service.AuthService;
+import iuh.cnm.bezola.utils.OTPQueue;
+import iuh.cnm.bezola.utils.OTPRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +48,15 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(
                         ApiResponse.builder()
                                 .error("Password not match")
+                                .status(400)
+                                .success(false)
+                                .build()
+                );
+            }
+            if (!OTPQueue.phoneNumbers.contains(userDTO.getPhone().replaceFirst("0","+84"))) {
+                return ResponseEntity.badRequest().body(
+                        ApiResponse.builder()
+                                .error("Phone number is not verified")
                                 .status(400)
                                 .success(false)
                                 .build()
