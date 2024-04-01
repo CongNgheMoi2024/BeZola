@@ -177,6 +177,28 @@ public class UserController {
         }
     }
 
+    @PostMapping("/change-password/{id}")
+    public ResponseEntity<?> changePasswordById(@PathVariable String id,@RequestBody ChangePasswordDTO changePasswordDTO) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.changePasswordById(id,changePasswordDTO))
+                            .message("Update user password success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+
     @GetMapping("")
     public ResponseEntity<ApiResponse<?>> getAllUsers() {
         return ResponseEntity.ok(

@@ -83,6 +83,22 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public User changePasswordById(String id, ChangePasswordDTO changePasswordDTO) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            throw new DataNotFoundException("User not found with phone: " + id);
+        }
+        User user = optionalUser.get();
+        if(!passwordEncoder.matches(changePasswordDTO.getOldPassword(),user.getPassword())) {
+            throw new DataNotFoundException("Old password not match");
+        }
+        if(!changePasswordDTO.getConfirmPassword().equals(changePasswordDTO.getNewPassword())) {
+            throw new DataNotFoundException("Password not match");
+        }
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        return userRepository.save(user);
+    }
+
 
     public Iterable<User> getAllUsers() {
         return userRepository.findAll();
