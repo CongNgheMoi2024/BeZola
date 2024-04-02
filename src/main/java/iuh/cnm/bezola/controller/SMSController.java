@@ -80,8 +80,8 @@ public class SMSController {
     }
     @PutMapping("/otp-forget/{phone}")
     public ResponseEntity<?> verifyForget(@PathVariable String phone,@RequestBody ForgotPasswordDTO updatePasswordDTO) throws DataNotFoundException {
-        phone = phone.replaceFirst("0","+84");
-        OTPRequest otpRequest = new OTPRequest(updatePasswordDTO.getOtp(),phone);
+        String newPhone = phone.replaceFirst("0","+84");
+        OTPRequest otpRequest = new OTPRequest(updatePasswordDTO.getOtp(),newPhone);
         if(OTPQueue.verifyOTP(otpRequest)){
             userService.updateUser(phone,updatePasswordDTO);
             return ResponseEntity.ok("Verified forget password OTP successfully");
