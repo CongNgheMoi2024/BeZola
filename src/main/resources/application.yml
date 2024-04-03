@@ -13,6 +13,10 @@ jwt:
   secretKey : fXgR+2uSB9d+LmMOn5ryQi973KUQmM1AauOZSiHAULc=
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
   data:
     mongodb:
       uri: mongodb://root:123456@localhost:27017/zola_db?authSource=admin
@@ -29,3 +33,4 @@ spring:
 accessKey : AKIA3FLD4U2PXYEXK677
 secretKey : 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
 bucketName : images-111
+

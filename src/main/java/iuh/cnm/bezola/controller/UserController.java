@@ -276,7 +276,7 @@ public class UserController {
                  );
                 String imageUrl = uploadImageToS3(avatar);
                 userService.updateAvatarUser(id, imageUrl);
-        } catch (DataNotFoundException | IOException e) {
+        } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(
                     ApiResponse.builder()
                             .error(e.getMessage())
@@ -315,7 +315,7 @@ public class UserController {
                 );
             String imageUrl = uploadImageToS3(imageCover);
             userService.updateImageCoverUser(id, imageUrl);
-        } catch (DataNotFoundException | IOException e) {
+        } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(
                     ApiResponse.builder()
                             .error(e.getMessage())
@@ -332,7 +332,7 @@ public class UserController {
                         .build()
         );
     }
-    private String uploadImageToS3(MultipartFile file) throws IOException {
+    private String uploadImageToS3(MultipartFile file) {
         String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         String uniqueFileName = UUID.randomUUID().toString() + "_" + fileName;
         try {
@@ -343,7 +343,13 @@ public class UserController {
                             .build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
         } catch (S3Exception e) {
-            throw new IOException("Failed to upload image to S3");
+            try {
+                throw new IOException("Failed to upload image to S3");
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(uniqueFileName)).toExternalForm();
     }
