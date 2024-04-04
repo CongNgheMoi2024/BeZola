@@ -13,4 +13,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class FriendRequestResponse extends FriendRequest {
     private User toUser;
+    private User fromUser;
 }
