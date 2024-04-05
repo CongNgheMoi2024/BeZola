@@ -1,21 +1,16 @@
 package iuh.cnm.bezola.controller;
 
-import iuh.cnm.bezola.models.FriendRequest;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.FriendRequestResponse;
 import iuh.cnm.bezola.service.impl.FriendRequestServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
-@Controller
+@RestController
 @AllArgsConstructor
 @RequestMapping("${api.prefix}/friend-requests")
 public class FriendRequestController {
