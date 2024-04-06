@@ -52,13 +52,19 @@ public class RoomService {
     public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
         User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
-        if(room.getAdminId().equals(reqUser.getId())||room.getSubAdmins().contains(reqUser.getId())){
+        if(room.getSubAdmins()!=null){
+            if(room.getSubAdmins().contains(reqUser.getId()) && !room.getAdminId().equals(userId)){
+                room.getMembers().remove(userId);
+                return roomRepository.save(room);
+            }
+        }
+        if(room.getAdminId().equals(reqUser.getId())){
             room.getMembers().remove(user.getId());
-            roomRepository.save(room);
+            return roomRepository.save(room);
         }else if(room.getMembers().contains(reqUser.getId())) {
             if (reqUser.getId().equals(user.getId())) {
                 room.getMembers().remove(user.getId());
-                roomRepository.save(room);
+                return roomRepository.save(room);
             }
         }
         throw new RuntimeException("You can't remove another user");
@@ -67,6 +73,7 @@ public class RoomService {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
         if(room.getAdminId().equals(userReq.getId())){
             roomRepository.delete(room);
+            return;
         }
         throw new RuntimeException("You are not admin of this group");
     }
