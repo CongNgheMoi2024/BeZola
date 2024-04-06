@@ -27,4 +27,8 @@ public class MessageService {
         var chatId = roomService.getRoomId(senderId, recipientId, false);
         return chatId.map(messageRepository::findAllByChatId).orElse(new ArrayList<>());
     }
+
+    public Message findById(String id) {
+        return messageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
+    }
 }

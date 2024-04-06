@@ -33,7 +33,10 @@ public class ChatController {
                            @ModelAttribute("recipientId") String recipientId){
         for (MultipartFile file: files) {
             if(file.getSize()> 100*1024*1024){
-                return ResponseEntity.badRequest().body("File size must be less than 100MB");
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status(400)
+                        .message("File size must be less than 100MB")
+                        .build());
             }
             String fileUrl = s3Service.uploadFileToS3(file);
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
@@ -53,8 +56,24 @@ public class ChatController {
             }
             processMessage(message);
         }
-        return ResponseEntity.ok("File uploaded successfully");
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("File uploaded successfully")
+                .build());
     }
+    @PostMapping("/api/v1/forward-messages/{recipientId}")
+    public ResponseEntity<?> forwardMessages(@RequestBody String messageId,
+                                             @PathVariable("recipientId") String recipientId){
+        Message message = messageService.findById(messageId);
+        message.setRecipientId(recipientId);
+        message.setTimestamp(new Date());
+        processMessage(message);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message forwarded successfully")
+                .build());
+    }
+    
     @MessageMapping("/chat")  // /app/chat
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);
@@ -70,6 +89,7 @@ public class ChatController {
                         .build()
         );
     }
+
 
     @GetMapping("/api/v1/messages/{senderId}/{recipientId}")
     public ResponseEntity<ApiResponse<List<Message>>> findMessages(

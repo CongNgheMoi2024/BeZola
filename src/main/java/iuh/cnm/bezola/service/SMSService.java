@@ -4,7 +4,6 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import iuh.cnm.bezola.models.SMS;
-import iuh.cnm.bezola.models.StoreOTP;
 import iuh.cnm.bezola.utils.OTPQueue;
 import iuh.cnm.bezola.utils.OTPRequest;
 import org.springframework.stereotype.Service;

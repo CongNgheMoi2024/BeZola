@@ -1,5 +1,7 @@
 package iuh.cnm.bezola.service;
 
+import iuh.cnm.bezola.models.User;
+import iuh.cnm.bezola.repository.UserRepository;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.repository.RoomRepository;
@@ -21,6 +23,53 @@ import java.util.Optional;
 public class RoomService {
     private final RoomRepository roomRepository;
     private final MongoTemplate mongoTemplate;
+    private final UserRepository userRepository;
+
+    public String createRoomGroup(String groupName, String adminId, List<String> members){
+        members.add(adminId);
+        Room room = Room.builder()
+                .chatId(adminId+System.currentTimeMillis())
+                .senderId(adminId)
+                .isGroup(true)
+                .groupName(groupName)
+                .members(members)
+                .adminId(adminId)
+                .build();
+        roomRepository.save(room);
+        return room.getChatId();
+    }
+    public Room addUserToGroup(String userId, String roomId) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
+        room.getMembers().add(user.getId());
+        return roomRepository.save(room);
+    }
+    public Room renameGroup(String roomId,String groupName) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        room.setGroupName(groupName);
+        return roomRepository.save(room);
+    }
+    public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
+        if(room.getAdminId().equals(reqUser.getId())||room.getSubAdmins().contains(reqUser.getId())){
+            room.getMembers().remove(user.getId());
+            roomRepository.save(room);
+        }else if(room.getMembers().contains(reqUser.getId())) {
+            if (reqUser.getId().equals(user.getId())) {
+                room.getMembers().remove(user.getId());
+                roomRepository.save(room);
+            }
+        }
+        throw new RuntimeException("You can't remove another user");
+    }
+    public void deleteRoom(String roomId, User userReq) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        if(room.getAdminId().equals(userReq.getId())){
+            roomRepository.delete(room);
+        }
+        throw new RuntimeException("You are not admin of this group");
+    }
 
     public Optional<String> getRoomId(String senderId, String recipientId, boolean createNewRoomIfNotExist) {
         return roomRepository.findBySenderIdAndRecipientId(senderId, recipientId)
@@ -41,11 +90,13 @@ public class RoomService {
         Room senderRecipient = Room.builder()
                 .chatId(chatId)
                 .senderId(senderId)
+                .isGroup(false)
                 .recipientId(recipientId)
                 .build();
 
         Room recipientSender = Room.builder()
                 .chatId(chatId)
+                .isGroup(false)
                 .senderId(recipientId)
                 .recipientId(senderId)
                 .build();

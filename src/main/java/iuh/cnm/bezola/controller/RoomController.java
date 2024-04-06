@@ -1,15 +1,17 @@
 package iuh.cnm.bezola.controller;
 
+import iuh.cnm.bezola.dto.CreateGroupRequest;
+import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.Room;
+import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.service.RoomService;
+import iuh.cnm.bezola.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,6 +20,130 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoomController {
     private final RoomService roomService;
+    private final UserService userService;
+
+    @PostMapping("/create-room-group")
+    public ResponseEntity<ApiResponse<?>> createRoomGroup(@RequestHeader("Authorization") String token,@RequestBody CreateGroupRequest request) throws UserException {
+        if(request.getMembers().size() < 2){
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error("Members must be more than 2")
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            String chatId = roomService.createRoomGroup(request.getGroupName(),user.getId(),request.getMembers());
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(chatId)
+                            .message("Create room group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/add-user-to-group/{userId}/{roomId}")
+    public ResponseEntity<ApiResponse<?>> addUserToGroup(@PathVariable String userId, @PathVariable String roomId) {
+        try {
+            Room room = roomService.addUserToGroup(userId, roomId);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Add user to group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/rename-group/{roomId}")
+    public ResponseEntity<ApiResponse<?>> renameGroup(@PathVariable String roomId, @RequestBody String groupName) {
+        try {
+            Room room = roomService.renameGroup(roomId, groupName);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Rename group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/remove-user-from-group/{roomId}/{userId}")
+    public ResponseEntity<ApiResponse<?>> removeUserFromGroup(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            Room room = roomService.removeUserFromGroup(roomId, userId,user);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Remove user from group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @DeleteMapping("/delete-room/{roomId}")
+    public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            roomService.deleteRoom(roomId, user);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .message("Delete room success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+
     @GetMapping("/rooms/user/{userId}")
     public ResponseEntity<ApiResponse<?>> getRoomByUserIdWithRecipientInfo(@PathVariable String userId) {
         try {

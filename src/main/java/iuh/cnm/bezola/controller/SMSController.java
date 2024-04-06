@@ -2,11 +2,7 @@ package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.dto.ForgotPasswordDTO;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
-import iuh.cnm.bezola.exceptions.UserException;
-import iuh.cnm.bezola.models.OTP;
 import iuh.cnm.bezola.models.SMS;
-import iuh.cnm.bezola.models.StoreOTP;
-import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.service.SMSService;
 import iuh.cnm.bezola.service.UserService;
 import iuh.cnm.bezola.utils.OTPQueue;
