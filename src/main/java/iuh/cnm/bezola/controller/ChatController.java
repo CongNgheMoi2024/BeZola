@@ -32,7 +32,7 @@ public class ChatController {
     public ResponseEntity<?> sendFileMessage(@ModelAttribute("files") List<MultipartFile> files,
                            @ModelAttribute("senderId") String senderId,
                            @ModelAttribute("recipientId") String recipientId){
-        List<String> response = new ArrayList<>();
+        List<Message> response = new ArrayList<>();
         if(files.isEmpty()){
             return ResponseEntity.badRequest().body(ApiResponse.builder()
                     .status(400)
@@ -47,7 +47,6 @@ public class ChatController {
                         .build());
             }
             String fileUrl = s3Service.uploadFileToS3(file);
-            response.add(fileUrl);
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
             Message message = new Message();
             message.setContent(fileUrl);
@@ -64,6 +63,7 @@ public class ChatController {
                 message.setType(MessageType.FILE);
             }
             processMessage(message);
+            response.add(message);
         }
         return ResponseEntity.ok(ApiResponse.builder()
                 .data(response)
