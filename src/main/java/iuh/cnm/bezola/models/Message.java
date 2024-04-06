@@ -3,6 +3,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,7 @@ public class Message {
     @JsonSerialize(using = DateSerializer.class)
     private Date timestamp;
     private String content;
+    private MessageType type;
     private List<String> attachments;
     private List<String> readBy;
 }

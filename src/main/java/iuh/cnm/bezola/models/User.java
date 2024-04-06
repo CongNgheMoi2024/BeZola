@@ -21,6 +21,7 @@ import java.util.List;
 @Document("users")
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class User implements UserDetails {
     @Id
     private String id;

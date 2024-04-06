@@ -81,7 +81,7 @@ public class RoomService {
 
         List<RoomWithUserDetailsResponse> results = mongoTemplate.aggregate(aggregation, "rooms", RoomWithUserDetailsResponse.class).getMappedResults();
 
-
+        System.out.println(results);
         return results;
     }
 }

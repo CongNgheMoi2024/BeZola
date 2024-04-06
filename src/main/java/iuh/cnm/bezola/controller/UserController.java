@@ -1,51 +1,25 @@
 package iuh.cnm.bezola.controller;
 
-import com.amazonaws.services.s3.model.CannedAccessControlList;
 import iuh.cnm.bezola.dto.ChangePasswordDTO;
 import iuh.cnm.bezola.dto.UpdateUserDTO;
-import iuh.cnm.bezola.dto.UserDto;
 import iuh.cnm.bezola.exceptions.DataAlreadyExistsException;
 import iuh.cnm.bezola.exceptions.DataNotFoundException;
 import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
+import iuh.cnm.bezola.service.S3Service;
 import iuh.cnm.bezola.service.UserService;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
-
-import java.io.IOException;
-import java.util.Objects;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("${api.prefix}/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
-
-    @Value("${accessKey}")
-    private String accessKey;
-
-    @Value("${secretKey}")
-    private String secretKey;
-
-    @Value("${bucketName}")
-    private String bucketName;
-
-    private final S3Client s3Client = S3Client.builder()
-            .region(Region.AP_SOUTHEAST_1)
-            .credentialsProvider(() -> AwsBasicCredentials.create(accessKey, secretKey))
-            .build();
+    private final S3Service s3Service;
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<?>> getUserProfileHandler(@RequestHeader("Authorization") String jwt) {
@@ -274,7 +248,7 @@ public class UserController {
                                  .success(false)
                                  .build()
                  );
-                String imageUrl = uploadImageToS3(avatar);
+                String imageUrl = s3Service.uploadFileToS3(avatar);
                 userService.updateAvatarUser(id, imageUrl);
         } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(
@@ -313,7 +287,7 @@ public class UserController {
                                 .success(false)
                                 .build()
                 );
-            String imageUrl = uploadImageToS3(imageCover);
+            String imageUrl = s3Service.uploadFileToS3(imageCover);
             userService.updateImageCoverUser(id, imageUrl);
         } catch (DataNotFoundException e) {
             return ResponseEntity.badRequest().body(
@@ -332,25 +306,5 @@ public class UserController {
                         .build()
         );
     }
-    private String uploadImageToS3(MultipartFile file) {
-        String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        String uniqueFileName = UUID.randomUUID().toString() + "_" + fileName;
-        try {
-            s3Client.putObject(PutObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(uniqueFileName)
-                            .acl(String.valueOf(CannedAccessControlList.PublicRead))
-                            .build(),
-                    software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
-        } catch (S3Exception e) {
-            try {
-                throw new IOException("Failed to upload image to S3");
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return s3Client.utilities().getUrl(builder -> builder.bucket(bucketName).key(uniqueFileName)).toExternalForm();
-    }
+
 }
