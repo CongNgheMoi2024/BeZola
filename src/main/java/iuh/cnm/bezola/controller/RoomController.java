@@ -121,6 +121,52 @@ public class RoomController {
             );
         }
     }
+    @PutMapping("/add-sub-admin/{roomId}/{userId}")
+    public ResponseEntity<ApiResponse<?>> addSubAdmin(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            Room room = roomService.addSubAdmin(roomId, userId,user);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Add sub admin success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/remove-sub-admin/{roomId}/{userId}")
+    public ResponseEntity<ApiResponse<?>> removeSubAdmin(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            Room room = roomService.removeSubAdmin(roomId, userId,user);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Remove sub admin success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
     @DeleteMapping("/delete-room/{roomId}")
     public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
         User user = userService.findUserProfileByJwt(token);

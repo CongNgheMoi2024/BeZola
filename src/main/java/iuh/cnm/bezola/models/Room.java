@@ -4,6 +4,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -21,7 +22,7 @@ public class Room {
     private String recipientId;
     private boolean isGroup;
     private String groupName;
-    private List<String> members;
+    private List<String> members = new ArrayList<>();
     private String adminId;
-    private List<String> subAdmins;
+    private List<String> subAdmins = new ArrayList<>();
 }

@@ -171,4 +171,22 @@ public class RoomService {
         System.out.println(results);
         return results;
     }
+
+    public Room addSubAdmin(String roomId, String userId, User user) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        if(room.getAdminId().equals(user.getId())){
+            room.getSubAdmins().add(userId);
+            return roomRepository.save(room);
+        }
+        throw new RuntimeException("You are not admin of this group");
+    }
+
+    public Room removeSubAdmin(String roomId, String userId, User user) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        if(room.getAdminId().equals(user.getId())){
+            room.getSubAdmins().remove(userId);
+            return roomRepository.save(room);
+        }
+        throw new RuntimeException("You are not admin of this group");
+    }
 }
