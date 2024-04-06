@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -31,6 +32,13 @@ public class ChatController {
     public ResponseEntity<?> sendFileMessage(@ModelAttribute("files") List<MultipartFile> files,
                            @ModelAttribute("senderId") String senderId,
                            @ModelAttribute("recipientId") String recipientId){
+        List<String> response = new ArrayList<>();
+        if(files.isEmpty()){
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("File is required")
+                    .build());
+        }
         for (MultipartFile file: files) {
             if(file.getSize()> 100*1024*1024){
                 return ResponseEntity.badRequest().body(ApiResponse.builder()
@@ -39,6 +47,7 @@ public class ChatController {
                         .build());
             }
             String fileUrl = s3Service.uploadFileToS3(file);
+            response.add(fileUrl);
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
             Message message = new Message();
             message.setContent(fileUrl);
@@ -57,6 +66,7 @@ public class ChatController {
             processMessage(message);
         }
         return ResponseEntity.ok(ApiResponse.builder()
+                .data(response)
                 .status(200)
                 .message("File uploaded successfully")
                 .build());
