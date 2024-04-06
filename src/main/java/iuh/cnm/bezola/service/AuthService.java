@@ -43,12 +43,12 @@ public class AuthService {
         }
         User newUser = User.builder()
                 .name(userDTO.getName())
-                .email(userDTO.getEmail())
+//                .email(userDTO.getEmail())
                 .phone(userDTO.getPhone())
-                .avatar(userDTO.getAvatar())
+//                .avatar(userDTO.getAvatar())
                 .sex(userDTO.isSex())
                 .birthday(userDTO.getBirthday())
-                .onlineStatus(userDTO.isOnlineStatus())
+//                .onlineStatus(userDTO.isOnlineStatus())
                 .build();
         newUser.setRole(role);
         String password = userDTO.getPassword();
@@ -73,10 +73,15 @@ public class AuthService {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(phone, password, existingUser.getAuthorities());
         authenticationManager.authenticate(authenticationToken);
+
+        existingUser.setOnlineStatus(true);
+        userRepository.save(existingUser);
+
         return LoginResponse.builder()
-                .message("Login success")
-                .token(jwtTokenUtil.generateToken(existingUser))
+                .accessToken(jwtTokenUtil.generateToken(existingUser))
                 .refreshToken(jwtTokenUtil.generateRefreshToken(new HashMap<>(), existingUser))
+                .user(existingUser)
+                .phone(existingUser.getPhone())
                 .build();
     }
 
@@ -91,9 +96,10 @@ public class AuthService {
             throw new DataNotFoundException("Invalid phone number/password");
         }
         return LoginResponse.builder()
-                .message("Refresh token success")
-                .token(jwtTokenUtil.generateToken(existingUser))
+                .accessToken(jwtTokenUtil.generateToken(existingUser))
                 .refreshToken(refreshTokenDTO.getRefreshToken())
+                .user(existingUser)
+                .phone(existingUser.getPhone())
                 .build();
     }
 }

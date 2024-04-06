@@ -1,5 +1,6 @@
 package iuh.cnm.bezola.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -20,6 +21,7 @@ import java.util.List;
 @Document("users")
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class User implements UserDetails {
     @Id
     private String id;
@@ -28,10 +30,15 @@ public class User implements UserDetails {
     private String password;
     private String phone;
     private String avatar;
+    private String imageCover;
     private boolean sex;
     private LocalDate birthday;
     private boolean onlineStatus;
     private Role role;
+    //list friend
+    private List<String> friends;
+    //list phone book
+    private List<PhoneBook> phoneBooks;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -3,13 +3,18 @@ package iuh.cnm.bezola.controller;
 import iuh.cnm.bezola.dto.LoginDTO;
 import iuh.cnm.bezola.dto.RefreshTokenDTO;
 import iuh.cnm.bezola.dto.UserDto;
+import iuh.cnm.bezola.models.OTP;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.LoginResponse;
 import iuh.cnm.bezola.service.AuthService;
+import iuh.cnm.bezola.utils.OTPQueue;
+import iuh.cnm.bezola.utils.OTPRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,15 +53,18 @@ public class AuthController {
                                 .build()
                 );
             }
+            if (!OTPQueue.phoneNumbers.contains(userDTO.getPhone().replaceFirst("0","+84"))) {
+                return ResponseEntity.badRequest().body(
+                        ApiResponse.builder()
+                                .error("Phone number is not verified")
+                                .status(400)
+                                .success(false)
+                                .build()
+                );
+            }
             User user = userService.createUser(userDTO);
-            return ResponseEntity.ok(
-                    ApiResponse.builder()
-                            .data(user)
-                            .message("Register success")
-                            .status(200)
-                            .success(true)
-                            .build()
-            );
+            LoginDTO loginDTO = LoginDTO.builder().phone(user.getPhone()).password(userDTO.getPassword()).build();
+            return login(loginDTO);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     ApiResponse.builder()
@@ -82,11 +90,7 @@ public class AuthController {
                             .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .error(
-                            LoginResponse.builder()
-                                    .message(e.getMessage())
-                                    .build()
-                    )
+                    .error(e.getMessage())
                     .status(401)
                     .success(false)
                     .build());
@@ -105,11 +109,7 @@ public class AuthController {
                             .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .error(
-                            LoginResponse.builder()
-                                    .message(e.getMessage())
-                                    .build()
-                    )
+                    .error(e.getMessage())
                     .status(401)
                     .success(false)
                     .build());

@@ -1,11 +1,17 @@
 package iuh.cnm.bezola.models;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.DateSerializer;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -15,10 +21,13 @@ import java.util.List;
 public class Message {
     @Id
     private String id;
-    private String conversationId;
+    private String chatId;
     private String senderId;
-    private DateTime timestamp;
-    private String text;
+    private String recipientId;
+    @JsonSerialize(using = DateSerializer.class)
+    private Date timestamp;
+    private String content;
+    private MessageType type;
     private List<String> attachments;
     private List<String> readBy;
 }

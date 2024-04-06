@@ -74,6 +74,10 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of(String.format("%s/auth/login", apiPrefix), "POST"),
                 Pair.of(String.format("%s/auth/register", apiPrefix), "POST"),
                 Pair.of(String.format("%s/auth/refresh", apiPrefix), "POST"),
+                Pair.of(String.format("%s/phoneNumber", apiPrefix), "POST"),
+                Pair.of(String.format("%s/otp", apiPrefix), "POST"),
+                Pair.of(String.format("%s/forget-password", apiPrefix), "POST"),
+                Pair.of(String.format("%s/otp-forget/**", apiPrefix), "PUT"),
                 Pair.of(String.format("%s/heartbeat", apiPrefix), "GET"),
 
                 // Swagger
@@ -86,7 +90,13 @@ public class JwtTokenFilter extends OncePerRequestFilter{
                 Pair.of("/swagger-ui/**","GET"),
                 Pair.of("/swagger-ui.html", "GET"),
                 Pair.of("/swagger-ui/index.html", "GET"),
-                Pair.of("/swagger-api.html", "GET")
+                Pair.of("/swagger-api.html", "GET"),
+
+                //Websocket
+                Pair.of("/ws/**", "GET"),
+                Pair.of("/ws/**", "POST"),
+                Pair.of("/ws/**", "PUT"),
+                Pair.of("/ws/**", "DELETE")
         );
 
         String requestPath = request.getServletPath();
