@@ -307,4 +307,26 @@ public class UserController {
         );
     }
 
+
+    @GetMapping("/{phone}/skip-me/{id}")
+    public ResponseEntity<ApiResponse<?>> getSkipMe(@PathVariable String phone, @PathVariable String id) {
+        try {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(userService.getSkipMe(phone, id))
+                            .message("Get skip me success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
 }

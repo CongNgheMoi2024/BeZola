@@ -19,7 +19,6 @@ public class Room {
     private String chatId;
     private String senderId;
     private String recipientId;
-    private String lastMessage;
     private boolean isGroup;
     private String groupName;
     private List<String> members;

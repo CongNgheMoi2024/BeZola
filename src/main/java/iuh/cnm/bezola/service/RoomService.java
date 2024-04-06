@@ -7,6 +7,7 @@ import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
@@ -15,6 +16,7 @@ import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -124,19 +126,46 @@ public class RoomService {
             }
         };
 
+        AggregationOperation convertChatIdToObjectId = new AggregationOperation() {
+            @Override
+            public Document toDocument(AggregationOperationContext context) {
+                Document projectStage = new Document("$addFields", new Document("chatIdObjectId", new Document("$toObjectId", "$chatId")));
+                return projectStage;
+            }
+        };
+
         LookupOperation lookupOperation = LookupOperation.newLookup()
                 .from("users") // Tên bảng/bộ sưu tập của người dùng
                 .localField("recipientIdObjectId") // Trường trong bảng Room để thực hiện join
                 .foreignField("_id") // Trường tương ứng trong bảng người dùng
                 .as("userRecipient"); // Tên trường output chứa thông tin người dùng
 
+        LookupOperation lookupLastMessage = LookupOperation.newLookup()
+                .from("messages") // Tên bảng/bộ sưu tập của tin nhắn
+                .localField("chatId") // Trường trong bảng Room để thực hiện join
+                .foreignField("chatId") // Trường tương ứng trong bảng tin nhắn
+                .as("lastMessageDetails"); // Tên trường output chứa thông tin tin nhắn
+
+        // Để lấy tin nhắn cuối cùng, chúng ta cần thêm một bước sắp xếp và lọc
+        AggregationOperation filterLastMessage = new AggregationOperation() {
+            @Override
+            public Document toDocument(AggregationOperationContext context) {
+                Document filter = new Document("$addFields", new Document("lastMessage",
+                        new Document("$arrayElemAt", Arrays.asList("$lastMessageDetails", -1))));
+                return context.getMappedObject(filter);
+            }
+        };
+
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(Criteria.where("senderId").is(userId)),
                 convertRecipientIdToObjectId,
                 lookupOperation,
-                Aggregation.unwind("userRecipient", true) // Giải nén kết quả join, `true` cho phép giữ lại các bản ghi không có kết quả join
+                Aggregation.unwind("userRecipient", true), // Giải nén kết quả join với thông tin người dùng
+                lookupLastMessage, // Thực hiện lookup tin nhắn cuối
+                filterLastMessage, // Lọc và lấy tin nhắn cuối cùng
+                Aggregation.unwind("lastMessage", true), // Giải nén kết quả của tin nhắn cuối cùng, nếu cần
+                Aggregation.sort(Sort.Direction.DESC, "lastMessage.timestamp")
         );
-
         List<RoomWithUserDetailsResponse> results = mongoTemplate.aggregate(aggregation, "rooms", RoomWithUserDetailsResponse.class).getMappedResults();
 
         System.out.println(results);

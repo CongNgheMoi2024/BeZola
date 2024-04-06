@@ -264,4 +264,19 @@ public class UserService {
         }
         return userResponses;
     }
+
+    public User getSkipMe(String phone, String id) throws UserException {
+
+        Optional<User> optionalUser = userRepository.findByPhone(phone);
+
+        if (optionalUser.isEmpty()) {
+            throw new UserException("User not found with phone: " + phone);
+        }
+
+        if (optionalUser.get().getId().equals(id)) {
+            throw new UserException("This is your account! You can't skip yourself!");
+        }
+
+        return optionalUser.get();
+    }
 }
