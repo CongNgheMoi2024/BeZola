@@ -71,13 +71,15 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
-    @PostMapping("/api/v1/forward-messages/{recipientId}")
-    public ResponseEntity<?> forwardMessages(@RequestBody String messageId,
-                                             @PathVariable("recipientId") String recipientId){
-        Message message = messageService.findById(messageId);
-        message.setRecipientId(recipientId);
-        message.setTimestamp(new Date());
-        processMessage(message);
+    @PostMapping("/api/v1/forward-messages/{messageId}")
+    public ResponseEntity<?> forwardMessages(@PathVariable("messageId")String messageId,@RequestBody List<String> recipientIds){
+        for ( String recipientId: recipientIds) {
+            Message message = messageService.findById(messageId);
+            message.setRecipientId(recipientId);
+            message.setTimestamp(new Date());
+            processMessage(message);
+        }
+
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .message("Message forwarded successfully")
