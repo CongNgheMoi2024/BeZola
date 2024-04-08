@@ -1,11 +1,14 @@
 package iuh.cnm.bezola.controller;
 
+import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.ChatNotification;
 import iuh.cnm.bezola.models.Message;
 import iuh.cnm.bezola.models.MessageType;
+import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.S3Service;
+import iuh.cnm.bezola.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ public class ChatController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessageService messageService;
     private final S3Service s3Service;
+    private final UserService userService;
 
     @PostMapping(value = "/api/v1/send-file-message",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> sendFileMessage(@ModelAttribute("files") List<MultipartFile> files,
@@ -71,13 +75,22 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
-    @PostMapping("/api/v1/forward-messages/{recipientId}")
-    public ResponseEntity<?> forwardMessages(@RequestBody String messageId,
-                                             @PathVariable("recipientId") String recipientId){
+    @PostMapping("/api/v1/forward-messages/{messageId}")
+    public ResponseEntity<?> forwardMessages(@RequestHeader("Authorization") String token,@PathVariable("messageId")String messageId,@RequestBody List<String> recipientIds) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
         Message message = messageService.findById(messageId);
-        message.setRecipientId(recipientId);
-        message.setTimestamp(new Date());
-        processMessage(message);
+        for ( String recipientId: recipientIds) {
+            Message newMessage = new Message();
+            newMessage.setSenderId(user.getId());
+            newMessage.setContent(message.getContent());
+            newMessage.setType(message.getType());
+            newMessage.setAttachments(message.getAttachments());
+            newMessage.setChatId(message.getChatId());
+            newMessage.setReadBy(new ArrayList<>());
+            newMessage.setRecipientId(recipientId);
+            newMessage.setTimestamp(new Date());
+            processMessage(newMessage);
+        }
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .message("Message forwarded successfully")
