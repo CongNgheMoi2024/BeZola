@@ -27,6 +27,7 @@ public class Message {
     @JsonSerialize(using = DateSerializer.class)
     private Date timestamp;
     private String content;
+    private String fileName;
     private MessageType type;
     private List<String> attachments;
     private List<String> readBy;

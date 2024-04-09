@@ -51,11 +51,13 @@ public class ChatController {
                         .build());
             }
             String fileUrl = s3Service.uploadFileToS3(file);
+            String fileName = file.getOriginalFilename();
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
             Message message = new Message();
             message.setContent(fileUrl);
             message.setRecipientId(recipientId);
             message.setSenderId(senderId);
+            message.setFileName(fileName);
             message.setTimestamp(new Date());
             if (extension.equalsIgnoreCase(".jpg") || extension.equalsIgnoreCase(".jpeg") || extension.equalsIgnoreCase(".png")) {
                 message.setType(MessageType.IMAGE);
@@ -75,6 +77,14 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
+    @DeleteMapping("/api/v1/recall-messages/{messageId}")
+    public ResponseEntity<?> deleteMessage(@PathVariable("messageId") String messageId){
+        messageService.deleteMessage(messageId);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message deleted successfully")
+                .build());
+    }
     @PostMapping("/api/v1/forward-messages/{messageId}")
     public ResponseEntity<?> forwardMessages(@RequestHeader("Authorization") String token,@PathVariable("messageId")String messageId,@RequestBody List<String> recipientIds) throws UserException {
         User user = userService.findUserProfileByJwt(token);
@@ -83,6 +93,7 @@ public class ChatController {
             Message newMessage = new Message();
             newMessage.setSenderId(user.getId());
             newMessage.setContent(message.getContent());
+            newMessage.setFileName(message.getFileName());
             newMessage.setType(message.getType());
             newMessage.setAttachments(message.getAttachments());
             newMessage.setChatId(message.getChatId());
@@ -96,7 +107,7 @@ public class ChatController {
                 .message("Message forwarded successfully")
                 .build());
     }
-    
+
     @MessageMapping("/chat")  // /app/chat
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);

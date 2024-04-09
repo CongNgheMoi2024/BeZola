@@ -31,4 +31,9 @@ public class MessageService {
     public Message findById(String id) {
         return messageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
     }
+
+    public void deleteMessage(String messageId) {
+        Message message = messageRepository.findById(messageId).orElseThrow(() -> new RuntimeException("Message not found"));
+        messageRepository.delete(message);
+    }
 }
