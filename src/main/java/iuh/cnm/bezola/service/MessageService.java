@@ -27,6 +27,10 @@ public class MessageService {
         var chatId = roomService.getRoomId(senderId, recipientId, false);
         return chatId.map(messageRepository::findAllByChatId).orElse(new ArrayList<>());
     }
+    public List<Message> findImageVideoMessages(String senderId, String recipientId) {
+        var chatId = roomService.getRoomId(senderId, recipientId, false);
+        return messageRepository.findAllByChatIdAndMessageType(chatId.orElseThrow(() -> new RuntimeException("Cannot create chatId")));
+    }
 
     public Message findById(String id) {
         return messageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
@@ -35,5 +39,10 @@ public class MessageService {
     public void deleteMessage(String messageId) {
         Message message = messageRepository.findById(messageId).orElseThrow(() -> new RuntimeException("Message not found"));
         messageRepository.delete(message);
+    }
+
+    public List<Message> findFileMessages(String senderId, String recipientId) {
+        var chatId = roomService.getRoomId(senderId, recipientId, false);
+        return chatId.map(messageRepository::findAllByChatIdAndFile).orElse(new ArrayList<>());
     }
 }

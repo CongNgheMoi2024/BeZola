@@ -139,4 +139,32 @@ public class ChatController {
                         .status(200)
                         .build());
     }
+    @GetMapping("/api/v1/image-video-messages/{senderId}/{recipientId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findImageVideoMessages(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("recipientId") String recipientId
+    ) {
+        List<Message> messages = messageService.findImageVideoMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+    @GetMapping("/api/v1/file-messages/{senderId}/{recipientId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findFileMessages(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("recipientId") String recipientId
+    ) {
+        List<Message> messages = messageService.findFileMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
 }
