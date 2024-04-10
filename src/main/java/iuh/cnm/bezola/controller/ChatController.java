@@ -114,13 +114,7 @@ public class ChatController {
         Message savedMessage = messageService.save(message);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
-                ChatNotification.builder()
-                        .id(savedMessage.getId())
-                        .senderId(savedMessage.getSenderId())
-                        .recipientId(savedMessage.getRecipientId())
-                        .timestamp(savedMessage.getTimestamp())
-                        .content(savedMessage.getContent())
-                        .build()
+                savedMessage
         );
     }
 
