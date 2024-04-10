@@ -78,8 +78,17 @@ public class ChatController {
                 .build());
     }
     @DeleteMapping("/api/v1/recall-messages/{messageId}")
-    public ResponseEntity<?> deleteMessage(@PathVariable("messageId") String messageId){
-        messageService.deleteMessage(messageId);
+    public ResponseEntity<?> recallMessage(@PathVariable("messageId") String messageId){
+        messageService.recallMessage(messageId);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message deleted successfully")
+                .build());
+    }
+    @PutMapping("/api/v1/delete-messages/{messageId}")
+    public ResponseEntity<?> deleteMessages(@RequestHeader("Authorization") String token,@PathVariable("messageId") String messageId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        messageService.deleteMessage(user.getId(),messageId);
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .message("Message deleted successfully")
