@@ -1,10 +1,7 @@
 package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.exceptions.UserException;
-import iuh.cnm.bezola.models.ChatNotification;
-import iuh.cnm.bezola.models.Message;
-import iuh.cnm.bezola.models.MessageType;
-import iuh.cnm.bezola.models.User;
+import iuh.cnm.bezola.models.*;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.S3Service;
@@ -55,6 +52,7 @@ public class ChatController {
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
             Message message = new Message();
             message.setContent(fileUrl);
+            message.setStatus(Status.SENT);
             message.setRecipientId(recipientId);
             message.setSenderId(senderId);
             message.setFileName(fileName);
@@ -101,6 +99,7 @@ public class ChatController {
         for ( String recipientId: recipientIds) {
             Message newMessage = new Message();
             newMessage.setSenderId(user.getId());
+            newMessage.setStatus(Status.SENT);
             newMessage.setContent(message.getContent());
             newMessage.setFileName(message.getFileName());
             newMessage.setType(message.getType());
@@ -124,6 +123,15 @@ public class ChatController {
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 savedMessage
+        );
+    }
+
+    @MessageMapping("delete") // /app/delete
+    public void deleteMessage(@Payload Message message) {
+        messageService.recallMessage(message.getId());
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                message
         );
     }
 

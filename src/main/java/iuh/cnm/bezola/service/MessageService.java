@@ -1,6 +1,7 @@
 package iuh.cnm.bezola.service;
 
 import iuh.cnm.bezola.models.Message;
+import iuh.cnm.bezola.models.Status;
 import iuh.cnm.bezola.repository.MessageRepository;
 import iuh.cnm.bezola.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
@@ -63,7 +64,8 @@ public class MessageService {
 
     public void recallMessage(String messageId) {
         Message message = messageRepository.findById(messageId).orElseThrow(() -> new RuntimeException("Message not found"));
-        messageRepository.delete(message);
+        message.setStatus(Status.DELETED);
+        messageRepository.save(message);
     }
 
 

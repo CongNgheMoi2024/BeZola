@@ -30,6 +30,7 @@ public class Message {
     private String content;
     private String fileName;
     private MessageType type;
+    private Status status;
     private List<String> deletedUsers = new ArrayList<>();
     private List<String> attachments;
     private List<String> readBy = new ArrayList<>();
