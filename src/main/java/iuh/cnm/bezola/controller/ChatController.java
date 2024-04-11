@@ -130,6 +130,7 @@ public class ChatController {
     public void deleteMessage(@Payload String messageId) {
         Message message = messageService.findById(messageId);
         messageService.recallMessage(messageId);
+        message.setType(MessageType.RECALL);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 message
