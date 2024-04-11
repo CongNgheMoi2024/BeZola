@@ -234,7 +234,7 @@ public class UserService {
         List<PhoneBook> phoneBooks = user.getPhoneBooks();
         for (String friendId : user.getFriends()) {
             User friend = userRepository.findById(friendId).orElse(null);
-            if(user!=null){
+            if(friend!=null){
                 userResponses.add(UserResponse.builder()
                 .id(friend.getId())
                 .name(getNameFromPhoneBooks(phoneBooks, friend.getPhone(), friend.getName()))

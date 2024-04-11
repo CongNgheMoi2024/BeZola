@@ -11,6 +11,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,7 +28,10 @@ public class Message {
     @JsonSerialize(using = DateSerializer.class)
     private Date timestamp;
     private String content;
+    private String fileName;
     private MessageType type;
+    private Status status;
+    private List<String> deletedUsers = new ArrayList<>();
     private List<String> attachments;
-    private List<String> readBy;
+    private List<String> readBy = new ArrayList<>();
 }

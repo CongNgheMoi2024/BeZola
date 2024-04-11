@@ -1,10 +1,7 @@
 package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.exceptions.UserException;
-import iuh.cnm.bezola.models.ChatNotification;
-import iuh.cnm.bezola.models.Message;
-import iuh.cnm.bezola.models.MessageType;
-import iuh.cnm.bezola.models.User;
+import iuh.cnm.bezola.models.*;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.S3Service;
@@ -51,11 +48,14 @@ public class ChatController {
                         .build());
             }
             String fileUrl = s3Service.uploadFileToS3(file);
+            String fileName = file.getOriginalFilename();
             String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
             Message message = new Message();
             message.setContent(fileUrl);
+            message.setStatus(Status.SENT);
             message.setRecipientId(recipientId);
             message.setSenderId(senderId);
+            message.setFileName(fileName);
             message.setTimestamp(new Date());
             if (extension.equalsIgnoreCase(".jpg") || extension.equalsIgnoreCase(".jpeg") || extension.equalsIgnoreCase(".png")) {
                 message.setType(MessageType.IMAGE);
@@ -75,6 +75,23 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
+    @DeleteMapping("/api/v1/recall-messages/{messageId}")
+    public ResponseEntity<?> recallMessage(@PathVariable("messageId") String messageId){
+        messageService.recallMessage(messageId);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message deleted successfully")
+                .build());
+    }
+    @PutMapping("/api/v1/delete-messages/{messageId}")
+    public ResponseEntity<?> deleteMessages(@RequestHeader("Authorization") String token,@PathVariable("messageId") String messageId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        messageService.deleteMessage(user.getId(),messageId);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message deleted successfully")
+                .build());
+    }
     @PostMapping("/api/v1/forward-messages/{messageId}")
     public ResponseEntity<?> forwardMessages(@RequestHeader("Authorization") String token,@PathVariable("messageId")String messageId,@RequestBody List<String> recipientIds) throws UserException {
         User user = userService.findUserProfileByJwt(token);
@@ -82,7 +99,9 @@ public class ChatController {
         for ( String recipientId: recipientIds) {
             Message newMessage = new Message();
             newMessage.setSenderId(user.getId());
+            newMessage.setStatus(Status.SENT);
             newMessage.setContent(message.getContent());
+            newMessage.setFileName(message.getFileName());
             newMessage.setType(message.getType());
             newMessage.setAttachments(message.getAttachments());
             newMessage.setChatId(message.getChatId());
@@ -96,20 +115,25 @@ public class ChatController {
                 .message("Message forwarded successfully")
                 .build());
     }
-    
+
     @MessageMapping("/chat")  // /app/chat
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);
         Message savedMessage = messageService.save(message);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
-                ChatNotification.builder()
-                        .id(savedMessage.getId())
-                        .senderId(savedMessage.getSenderId())
-                        .recipientId(savedMessage.getRecipientId())
-                        .timestamp(savedMessage.getTimestamp())
-                        .content(savedMessage.getContent())
-                        .build()
+                savedMessage
+        );
+    }
+
+    @MessageMapping("/delete") // /app/delete
+    public void deleteMessage(@Payload String messageId) {
+        Message message = messageService.findById(messageId);
+        messageService.recallMessage(messageId);
+        message.setType(MessageType.RECALL);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                message
         );
     }
 
@@ -120,6 +144,34 @@ public class ChatController {
             @PathVariable("recipientId") String recipientId
     ) {
         List<Message> messages = messageService.findMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+    @GetMapping("/api/v1/image-video-messages/{senderId}/{recipientId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findImageVideoMessages(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("recipientId") String recipientId
+    ) {
+        List<Message> messages = messageService.findImageVideoMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+    @GetMapping("/api/v1/file-messages/{senderId}/{recipientId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findFileMessages(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("recipientId") String recipientId
+    ) {
+        List<Message> messages = messageService.findFileMessages(senderId, recipientId);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<Message>>builder()
