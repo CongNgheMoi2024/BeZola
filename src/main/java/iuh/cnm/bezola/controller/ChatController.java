@@ -127,8 +127,9 @@ public class ChatController {
     }
 
     @MessageMapping("/delete") // /app/delete
-    public void deleteMessage(@Payload Message message) {
-        messageService.recallMessage(message.getId());
+    public void deleteMessage(@Payload String messageId) {
+        Message message = messageService.findById(messageId);
+        messageService.recallMessage(messageId);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 message
