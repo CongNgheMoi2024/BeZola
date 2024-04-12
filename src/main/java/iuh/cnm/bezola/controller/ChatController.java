@@ -126,6 +126,13 @@ public class ChatController {
         );
     }
 
+    @PostMapping("/api/v1/reply-message/{messageId}")
+    public ResponseEntity<?> replyMessage(@PathVariable("messageId") String messageId,@RequestBody Message message) throws UserException {
+        message.setReplyTo(messageId);
+        processMessage(message);
+        return ResponseEntity.ok(message);
+    }
+
     @MessageMapping("/delete") // /app/delete
     public void deleteMessage(@Payload String messageId) {
         Message message = messageService.findById(messageId);

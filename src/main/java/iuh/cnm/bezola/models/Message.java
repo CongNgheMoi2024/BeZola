@@ -25,6 +25,7 @@ public class Message {
     private String chatId;
     private String senderId;
     private String recipientId;
+    private String replyTo;
     @JsonSerialize(using = DateSerializer.class)
     private Date timestamp;
     private String content;
