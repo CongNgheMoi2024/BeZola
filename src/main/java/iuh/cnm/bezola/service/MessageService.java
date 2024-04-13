@@ -24,6 +24,15 @@ public class MessageService {
         return message;
     }
 
+    //saveGroup
+    public Message saveGroup(Message message) {
+        var chatId = roomService.getRoomById(message.getChatId())
+                .orElseThrow(() -> new RuntimeException("Cannot create chatId"));
+        message.setChatId(chatId);
+        messageRepository.save(message);
+        return message;
+    }
+
     public List<Message> findMessages(String senderId, String recipientId) {
         var chatId = roomService.getRoomId(senderId, recipientId, false);
         List<Message> messages = chatId.map(messageRepository::findAllByChatId).orElse(new ArrayList<>());
@@ -35,6 +44,18 @@ public class MessageService {
         });
         return result;
     }
+
+    public List<Message> findMessagesByChatId(String chatId) {
+        List<Message> messages = messageRepository.findAllByChatId(chatId);
+        List<Message> result = new ArrayList<>();
+        messages.forEach(message -> {
+            if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(message.getSenderId())){
+                result.add(message);
+            }
+        });
+        return result;
+    }
+
     public List<Message> findImageVideoMessages(String senderId, String recipientId) {
         var chatId = roomService.getRoomId(senderId, recipientId, false);
         List<Message> messages = chatId.map(messageRepository::findAllByChatIdAndMessageType).orElse(new ArrayList<>());

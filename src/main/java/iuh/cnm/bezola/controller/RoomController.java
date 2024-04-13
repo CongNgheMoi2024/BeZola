@@ -22,7 +22,7 @@ public class RoomController {
     private final RoomService roomService;
     private final UserService userService;
 
-    @PostMapping("/create-room-group")
+    @PostMapping("/rooms/create-room-group")
     public ResponseEntity<ApiResponse<?>> createRoomGroup(@RequestHeader("Authorization") String token,@RequestBody CreateGroupRequest request) throws UserException {
         if(request.getMembers().size() < 2){
             return ResponseEntity.badRequest().body(

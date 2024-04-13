@@ -126,6 +126,16 @@ public class ChatController {
         );
     }
 
+    @MessageMapping("/chat/group")  // /app/chat
+    public void processMessageGroup(@Payload Message message) {//Payload is messageContent
+        System.out.println("Message: " + message);
+        Message savedMessage = messageService.saveGroup(message);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                savedMessage
+        );
+    }
+
     @PostMapping("/api/v1/reply-message/{messageId}")
     public ResponseEntity<?> replyMessage(@PathVariable("messageId") String messageId,@RequestBody Message message) throws UserException {
         message.setReplyTo(messageId);
@@ -179,6 +189,20 @@ public class ChatController {
             @PathVariable("recipientId") String recipientId
     ) {
         List<Message> messages = messageService.findFileMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+
+    @GetMapping("/api/v1/group-messages/{groupId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findGroupMessages(
+            @PathVariable("groupId") String groupId
+    ) {
+        List<Message> messages = messageService.findMessagesByChatId(groupId);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<Message>>builder()
