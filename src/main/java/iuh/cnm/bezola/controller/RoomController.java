@@ -14,6 +14,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("${api.prefix}")
@@ -54,10 +55,10 @@ public class RoomController {
             );
         }
     }
-    @PutMapping("/add-user-to-group/{userId}/{roomId}")
-    public ResponseEntity<ApiResponse<?>> addUserToGroup(@PathVariable String userId, @PathVariable String roomId) {
+    @PutMapping("/rooms/{roomId}/add-members")
+    public ResponseEntity<ApiResponse<?>> addUserToGroup(@RequestBody List<String> members, @PathVariable String roomId) {
         try {
-            Room room = roomService.addUserToGroup(userId, roomId);
+            Room room = roomService.addUserToGroup(members, roomId);
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -98,7 +99,7 @@ public class RoomController {
             );
         }
     }
-    @PutMapping("/remove-user-from-group/{roomId}/{userId}")
+    @PutMapping("/rooms/{roomId}/remove-member/{userId}")
     public ResponseEntity<ApiResponse<?>> removeUserFromGroup(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
         User user = userService.findUserProfileByJwt(token);
         try {
@@ -197,6 +198,29 @@ public class RoomController {
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(rooms)
+                            .message("Get room success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    
+    @GetMapping("/rooms/{id}")
+    public ResponseEntity<ApiResponse<?>> getRoomById(@PathVariable String id) {
+        try {
+            Optional<Room> room = roomService.getRoomByRoomId(id);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
                             .message("Get room success")
                             .status(200)
                             .success(true)

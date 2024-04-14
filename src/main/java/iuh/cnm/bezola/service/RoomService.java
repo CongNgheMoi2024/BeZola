@@ -37,10 +37,14 @@ public class RoomService {
         roomRepository.save(room);
         return room.getId();
     }
-    public Room addUserToGroup(String userId, String roomId) {
+    public Room addUserToGroup(List<String> members, String roomId) {
+        System.out.println("members: "+members);
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
-        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
-        room.getMembers().add(user.getId());
+        if (room.getMembers().containsAll(members)) {
+            throw new RuntimeException("User already in group");
+        }
+
+        room.getMembers().addAll(members);
         return roomRepository.save(room);
     }
     public Room renameGroup(String roomId,String groupName) {
@@ -94,6 +98,10 @@ public class RoomService {
     public Optional<String> getRoomById(String id) {
         return roomRepository.findById(id)
                 .map(Room::getId);
+    }
+
+    public Optional<Room> getRoomByRoomId(String id) {
+        return roomRepository.findById(id);
     }
 
     private String createChatId(String senderId, String recipientId) {
