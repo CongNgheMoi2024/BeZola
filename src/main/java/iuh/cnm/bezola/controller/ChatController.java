@@ -75,6 +75,9 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
+
+
+
     @DeleteMapping("/api/v1/recall-messages/{messageId}")
     public ResponseEntity<?> recallMessage(@PathVariable("messageId") String messageId){
         messageService.recallMessage(messageId);
@@ -109,6 +112,29 @@ public class ChatController {
             newMessage.setRecipientId(recipientId);
             newMessage.setTimestamp(new Date());
             processMessage(newMessage);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message forwarded successfully")
+                .build());
+    }
+
+    @PostMapping("/api/v1/forward-messages-group/{messageId}")
+    public ResponseEntity<?> forwardMessagesGroup(@RequestHeader("Authorization") String token,@PathVariable("messageId")String messageId,@RequestBody List<String> roomIds) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        Message message = messageService.findById(messageId);
+        for ( String roomId: roomIds) {
+            Message newMessage = new Message();
+            newMessage.setSenderId(user.getId());
+            newMessage.setStatus(Status.SENT);
+            newMessage.setContent(message.getContent());
+            newMessage.setFileName(message.getFileName());
+            newMessage.setType(message.getType());
+            newMessage.setAttachments(message.getAttachments());
+            newMessage.setChatId(roomId);
+            newMessage.setReadBy(new ArrayList<>());
+            newMessage.setTimestamp(new Date());
+            processMessageGroup(newMessage);
         }
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
@@ -154,6 +180,16 @@ public class ChatController {
         );
     }
 
+    @MessageMapping("/delete/group") // /app/delete/group
+    public void deleteMessageGroup(@Payload String messageId) {
+        Message message = messageService.findById(messageId);
+        messageService.recallMessage(messageId);
+        message.setType(MessageType.RECALL);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                message
+        );
+    }
 
     @GetMapping("/api/v1/messages/{senderId}/{recipientId}")
     public ResponseEntity<ApiResponse<List<Message>>> findMessages(
@@ -198,11 +234,12 @@ public class ChatController {
                         .build());
     }
 
-    @GetMapping("/api/v1/group-messages/{groupId}")
+    @GetMapping("/api/v1/group-messages/{senderId}/{groupId}")
     public ResponseEntity<ApiResponse<List<Message>>> findGroupMessages(
+            @PathVariable("senderId") String senderId,
             @PathVariable("groupId") String groupId
     ) {
-        List<Message> messages = messageService.findMessagesByChatId(groupId);
+        List<Message> messages = messageService.findMessagesByChatId(senderId,groupId);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<Message>>builder()

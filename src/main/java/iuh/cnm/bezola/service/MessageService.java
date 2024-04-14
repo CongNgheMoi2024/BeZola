@@ -45,11 +45,11 @@ public class MessageService {
         return result;
     }
 
-    public List<Message> findMessagesByChatId(String chatId) {
+    public List<Message> findMessagesByChatId( String senderId,String chatId) {
         List<Message> messages = messageRepository.findAllByChatId(chatId);
         List<Message> result = new ArrayList<>();
         messages.forEach(message -> {
-            if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(message.getSenderId())){
+            if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
                 result.add(message);
             }
         });
