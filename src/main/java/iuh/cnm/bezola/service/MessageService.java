@@ -79,6 +79,30 @@ public class MessageService {
         });
         return result;
     }
+
+    public List<Message> findImageVideoMessagesByChatId(String senderId, String chatId) {
+
+        List<Message> messages = messageRepository.findAllByChatIdAndMessageType(chatId);
+        List<Message> result = new ArrayList<>();
+        messages.forEach(message -> {
+            if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
+                result.add(message);
+            }
+        });
+        return result;
+    }
+
+    public List<Message> findFileMessagesByChatId(String senderId, String chatId){
+        List<Message> messages = messageRepository.findAllByChatIdAndFile(chatId);
+        List<Message> result = new ArrayList<>();
+        messages.forEach(message -> {
+            if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
+                result.add(message);
+            }
+        });
+        return result;
+    }
+
     public Message findById(String id) {
         return messageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
     }

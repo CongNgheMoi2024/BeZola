@@ -76,7 +76,52 @@ public class ChatController {
                 .build());
     }
 
-
+    @PostMapping(value = "/api/v1/send-file-message-group",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> sendFileMessageGroup(@ModelAttribute("files") List<MultipartFile> files,
+                                             @ModelAttribute("senderId") String senderId,
+                                             @ModelAttribute("chatId") String chatId){
+        List<Message> response = new ArrayList<>();
+        if(files.isEmpty()){
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("File is required")
+                    .build());
+        }
+        for (MultipartFile file: files) {
+            if(file.getSize()> 100*1024*1024){
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status(400)
+                        .message("File size must be less than 100MB")
+                        .build());
+            }
+            String fileUrl = s3Service.uploadFileToS3(file);
+            String fileName = file.getOriginalFilename();
+            String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
+            Message message = new Message();
+            message.setContent(fileUrl);
+            message.setStatus(Status.SENT);
+            message.setChatId(chatId);
+            message.setSenderId(senderId);
+            message.setFileName(fileName);
+            message.setTimestamp(new Date());
+            if (extension.equalsIgnoreCase(".jpg") || extension.equalsIgnoreCase(".jpeg") || extension.equalsIgnoreCase(".png")) {
+                message.setType(MessageType.IMAGE);
+            } else if (extension.equalsIgnoreCase(".mp4") || extension.equalsIgnoreCase(".avi") || extension.equalsIgnoreCase(".mov")) {
+                message.setType(MessageType.VIDEO);
+            } else if (extension.equalsIgnoreCase(".mp3") || extension.equalsIgnoreCase(".wav") || extension.equalsIgnoreCase(".flac")) {
+                message.setType(MessageType.AUDIO);
+            } else {
+                message.setType(MessageType.FILE);
+            }
+            processMessageGroup(message);
+            response.add(message);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .data(response)
+                .status(200)
+                .message("File uploaded successfully")
+                .build());
+    }
 
     @DeleteMapping("/api/v1/recall-messages/{messageId}")
     public ResponseEntity<?> recallMessage(@PathVariable("messageId") String messageId){
@@ -219,12 +264,41 @@ public class ChatController {
                         .status(200)
                         .build());
     }
+
+    @GetMapping("/api/v1/image-video-messages-group/{senderId}/{chatId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findImageVideoMessagesGroup(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("chatId") String chatId) {
+        List<Message> messages = messageService.findImageVideoMessagesByChatId(senderId, chatId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
     @GetMapping("/api/v1/file-messages/{senderId}/{recipientId}")
     public ResponseEntity<ApiResponse<List<Message>>> findFileMessages(
             @PathVariable("senderId") String senderId,
             @PathVariable("recipientId") String recipientId
     ) {
         List<Message> messages = messageService.findFileMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+
+    @GetMapping("/api/v1/file-messages-group/{senderId}/{chatId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findFileMessagesGroup(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("chatId") String chatId
+    ) {
+        List<Message> messages = messageService.findFileMessages(senderId, chatId);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<Message>>builder()
