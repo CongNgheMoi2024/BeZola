@@ -6,5 +6,7 @@ public enum MessageType {
     FILE,
     VIDEO,
     AUDIO,
-    RECALL
+    RECALL,
+    REMOVE_MEMBER,
+    ADD_MEMBER,
 }

@@ -2,15 +2,18 @@ package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.dto.CreateGroupRequest;
 import iuh.cnm.bezola.exceptions.UserException;
-import iuh.cnm.bezola.models.Room;
-import iuh.cnm.bezola.models.User;
+import iuh.cnm.bezola.models.*;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
+import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.RoomService;
 import iuh.cnm.bezola.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +25,8 @@ import java.util.Optional;
 public class RoomController {
     private final RoomService roomService;
     private final UserService userService;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final MessageService messageService;
 
     @PostMapping("/rooms/create-room-group")
     public ResponseEntity<ApiResponse<?>> createRoomGroup(@RequestHeader("Authorization") String token,@RequestBody CreateGroupRequest request) throws UserException {
@@ -235,5 +240,32 @@ public class RoomController {
                             .build()
             );
         }
+    }
+
+    @MessageMapping("/group/remove-member")
+    public void removeMember(@Payload Message message) throws UserException {
+        message.setType(MessageType.REMOVE_MEMBER);
+        Message savedMessage = messageService.saveGroup(message);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
+                savedMessage
+        );
+    }
+
+    @MessageMapping("/group/add-member")
+    public void addMember(@Payload Message message) throws UserException {
+        System.out.println(message);
+        message.setType(MessageType.ADD_MEMBER);
+        User sender = userService.findById(message.getSenderId());
+        User user = userService.findById(message.getContent());
+        if(user == null){
+            throw new UserException("User not found");
+        }
+        message.setContent(sender.getName() +  " đã thêm" + user.getName() + " vào nhóm");
+        Message savedMessage = messageService.saveGroup(message);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
+                savedMessage
+        );
     }
 }

@@ -279,4 +279,9 @@ public class UserService {
 
         return optionalUser.get();
     }
+
+    //findById
+    public User findById(String id) {
+        return userRepository.findById(id).orElse(null);
+    }
 }
