@@ -2,7 +2,10 @@ package iuh.cnm.bezola.controller;
 
 import iuh.cnm.bezola.dto.CreateGroupRequest;
 import iuh.cnm.bezola.exceptions.UserException;
-import iuh.cnm.bezola.models.*;
+import iuh.cnm.bezola.models.Message;
+import iuh.cnm.bezola.models.MessageType;
+import iuh.cnm.bezola.models.Room;
+import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.service.MessageService;
@@ -10,7 +13,6 @@ import iuh.cnm.bezola.service.RoomService;
 import iuh.cnm.bezola.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -28,6 +30,54 @@ public class RoomController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessageService messageService;
 
+//    @MessageMapping("/delete/group")
+    public void processDeleteGroup(@Payload String roomId) {
+        Message message = new Message();
+        message.setChatId(roomId);
+        message.setContent("delete-group");
+        message.setType(MessageType.DELETE_GROUP);
+        simpMessagingTemplate.convertAndSendToUser(
+                roomId, "/queue/messages",
+                message
+        );
+    }
+    @DeleteMapping("/delete-room/{roomId}")
+    public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            roomService.deleteRoom(roomId, user);
+            processDeleteGroup(roomId);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .message("Delete room success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+
+    public void processCreateGroup(@Payload List<String> members) {
+        for(String userId : members){
+            Message message = new Message();
+            message.setChatId(userId);
+            message.setContent("create-group");
+            message.setType(MessageType.CREATE_GROUP);
+            simpMessagingTemplate.convertAndSendToUser(
+                    userId, "/queue/messages",
+                    message
+            );
+        }
+    }
+
     @PostMapping("/rooms/create-room-group")
     public ResponseEntity<ApiResponse<?>> createRoomGroup(@RequestHeader("Authorization") String token,@RequestBody CreateGroupRequest request) throws UserException {
         if(request.getMembers().size() < 2){
@@ -42,6 +92,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             String chatId = roomService.createRoomGroup(request.getGroupName(),user.getId(),request.getMembers());
+            processCreateGroup(request.getMembers());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(chatId)
@@ -173,28 +224,7 @@ public class RoomController {
             );
         }
     }
-    @DeleteMapping("/delete-room/{roomId}")
-    public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
-        User user = userService.findUserProfileByJwt(token);
-        try {
-            roomService.deleteRoom(roomId, user);
-            return ResponseEntity.ok(
-                    ApiResponse.builder()
-                            .message("Delete room success")
-                            .status(200)
-                            .success(true)
-                            .build()
-            );
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    ApiResponse.builder()
-                            .error(e.getMessage())
-                            .status(400)
-                            .success(false)
-                            .build()
-            );
-        }
-    }
+
 
     @GetMapping("/rooms/user/{userId}")
     public ResponseEntity<ApiResponse<?>> getRoomByUserIdWithRecipientInfo(@PathVariable String userId) {

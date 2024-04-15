@@ -9,4 +9,6 @@ public enum MessageType {
     RECALL,
     REMOVE_MEMBER,
     ADD_MEMBER,
+    DELETE_GROUP,
+    CREATE_GROUP,
 }
