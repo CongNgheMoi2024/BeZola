@@ -55,6 +55,9 @@ public class RoomService {
     public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
         User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
+        if(room.getMembers().size()<4){
+            throw new RuntimeException("Group must have at least 3 members");
+        }
         if(room.getSubAdmins()!=null){
             if(room.getSubAdmins().contains(reqUser.getId()) && !room.getAdminId().equals(userId)){
                 room.getMembers().remove(userId);
