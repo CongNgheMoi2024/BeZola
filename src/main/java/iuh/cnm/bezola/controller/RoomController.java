@@ -47,7 +47,8 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             roomService.deleteRoom(roomId, user);
-            processGroup(roomId,MessageType.DELETE_GROUP,"Group has been deleted");
+            Room room = roomService.getRoomByRoomId(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+            processGroup(roomId,MessageType.DELETE_GROUP,room.getGroupName());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .message("Delete room success")
@@ -128,7 +129,7 @@ public class RoomController {
     public ResponseEntity<ApiResponse<?>> renameGroup(@PathVariable String roomId, @RequestBody String groupName) {
         try {
             Room room = roomService.renameGroup(roomId, groupName);
-            processGroup(roomId,MessageType.RENAME_GROUP,"Group name has been changed to "+groupName+" by admin");
+            processGroup(roomId,MessageType.RENAME_GROUP,groupName);
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -176,7 +177,8 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.addSubAdmin(roomId, userId,user);
-            processGroup(roomId,MessageType.ADD_SUB_ADMIN,"You have been added as sub admin");
+            User addedUser = userService.findById(userId);
+            processGroup(roomId,MessageType.ADD_SUB_ADMIN,addedUser.getName());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -200,7 +202,8 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.removeSubAdmin(roomId, userId,user);
-            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,"You have been removed as sub admin");
+            User removedUser = userService.findById(userId);
+            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,removedUser.getName());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -301,6 +304,55 @@ public class RoomController {
                     ApiResponse.builder()
                             .data(members)
                             .message("Get members success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/rooms/{roomId}/leave")
+    public ResponseEntity<ApiResponse<?>> leaveGroup(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            Room room = roomService.leaveGroup(roomId, user);
+            processGroup(roomId,MessageType.LEAVE_GROUP,user.getName());
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Leave group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+    @PutMapping("/rooms/{roomId}/change-admin/{userId}")
+    public ResponseEntity<ApiResponse<?>> makeAdmin(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            Room room = roomService.changeAdmin(roomId, userId,user);
+            User addedUser = userService.findById(userId);
+            processGroup(roomId,MessageType.CHANGE_ADMIN,addedUser.getName());
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(room)
+                            .message("Change admin success")
                             .status(200)
                             .success(true)
                             .build()
