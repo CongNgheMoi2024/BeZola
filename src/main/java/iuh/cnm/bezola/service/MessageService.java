@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -26,6 +27,7 @@ public class MessageService {
         var chatId = roomService.getRoomId(message.getSenderId(), message.getRecipientId(), true)
                 .orElseThrow(() -> new RuntimeException("Cannot create chatId"));
         message.setChatId(chatId);
+        message.setTimestamp(new Date());
         messageRepository.save(message);
         return message;
     }
@@ -35,6 +37,7 @@ public class MessageService {
         var chatId = roomService.getRoomById(message.getChatId())
                 .orElseThrow(() -> new RuntimeException("Cannot create chatId"));
         message.setChatId(chatId);
+        message.setTimestamp(new Date());
         messageRepository.save(message);
         return message;
     }
