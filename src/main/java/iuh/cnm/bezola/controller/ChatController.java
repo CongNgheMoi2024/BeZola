@@ -191,6 +191,7 @@ public class ChatController {
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);
         Message savedMessage = messageService.save(message);
+        savedMessage.getUser().setBirthday(null);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 savedMessage
@@ -203,6 +204,7 @@ public class ChatController {
         Message savedMessage = messageService.saveGroup(message);
         User user = userService.findById(message.getSenderId());
         savedMessage.setUser(user);
+        savedMessage.getUser().setBirthday(null);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getChatId(), "/queue/messages",
                 savedMessage
