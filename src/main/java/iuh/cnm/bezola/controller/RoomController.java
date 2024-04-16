@@ -31,11 +31,11 @@ public class RoomController {
     private final MessageService messageService;
 
 //    @MessageMapping("/delete/group")
-    public void processDeleteGroup(@Payload String roomId) {
+    public void processGroup(@Payload String roomId,MessageType type,String content) {
         Message message = new Message();
         message.setChatId(roomId);
-        message.setContent("delete-group");
-        message.setType(MessageType.DELETE_GROUP);
+        message.setContent(content);
+        message.setType(type);
         simpMessagingTemplate.convertAndSendToUser(
                 roomId, "/queue/messages",
                 message
@@ -46,7 +46,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             roomService.deleteRoom(roomId, user);
-            processDeleteGroup(roomId);
+            processGroup(roomId,MessageType.DELETE_GROUP,"Group has been deleted");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .message("Delete room success")
@@ -65,19 +65,6 @@ public class RoomController {
         }
     }
 
-    public void processCreateGroup(@Payload List<String> members) {
-        for(String userId : members){
-            Message message = new Message();
-            message.setChatId(userId);
-            message.setContent("create-group");
-            message.setType(MessageType.CREATE_GROUP);
-            simpMessagingTemplate.convertAndSendToUser(
-                    userId, "/queue/messages",
-                    message
-            );
-        }
-    }
-
     @PostMapping("/rooms/create-room-group")
     public ResponseEntity<ApiResponse<?>> createRoomGroup(@RequestHeader("Authorization") String token,@RequestBody CreateGroupRequest request) throws UserException {
         if(request.getMembers().size() < 2){
@@ -92,7 +79,9 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             String chatId = roomService.createRoomGroup(request.getGroupName(),user.getId(),request.getMembers());
-            processCreateGroup(request.getMembers());
+            for (String member : request.getMembers()) {
+                processGroup(member,MessageType.CREATE_GROUP,"You have been added to a group");
+            }
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(chatId)
@@ -115,6 +104,7 @@ public class RoomController {
     public ResponseEntity<ApiResponse<?>> addUserToGroup(@RequestBody List<String> members, @PathVariable String roomId) {
         try {
             Room room = roomService.addUserToGroup(members, roomId);
+//            processGroup(roomId,MessageType.ADD_MEMBER,"You have been added to a group");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -137,6 +127,7 @@ public class RoomController {
     public ResponseEntity<ApiResponse<?>> renameGroup(@PathVariable String roomId, @RequestBody String groupName) {
         try {
             Room room = roomService.renameGroup(roomId, groupName);
+            processGroup(roomId,MessageType.RENAME_GROUP,"Group name has been changed to "+groupName+" by admin");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -160,6 +151,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.removeUserFromGroup(roomId, userId,user);
+//            processGroup(roomId,MessageType.REMOVE_MEMBER,"You have been removed from group");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -183,6 +175,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.addSubAdmin(roomId, userId,user);
+            processGroup(roomId,MessageType.ADD_SUB_ADMIN,"You have been added as sub admin");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -206,6 +199,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.removeSubAdmin(roomId, userId,user);
+            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,"You have been removed as sub admin");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
