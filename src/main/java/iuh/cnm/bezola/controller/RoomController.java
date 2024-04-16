@@ -80,7 +80,7 @@ public class RoomController {
         try {
             String chatId = roomService.createRoomGroup(request.getGroupName(),user.getId(),request.getMembers());
             for (String member : request.getMembers()) {
-                processGroup(member,MessageType.CREATE_GROUP,"You have been added to a group");
+                processGroup(member,MessageType.CREATE_GROUP,chatId);
             }
             return ResponseEntity.ok(
                     ApiResponse.builder()
