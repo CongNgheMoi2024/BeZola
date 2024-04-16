@@ -4,7 +4,12 @@ import iuh.cnm.bezola.models.Message;
 import iuh.cnm.bezola.models.Status;
 import iuh.cnm.bezola.repository.MessageRepository;
 import iuh.cnm.bezola.repository.RoomRepository;
+import iuh.cnm.bezola.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.LookupOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,6 +20,7 @@ import java.util.List;
 public class MessageService {
     private final MessageRepository messageRepository;
     private final RoomService roomService;
+    private final UserRepository userRepository;
 
     public Message save(Message message) {
         var chatId = roomService.getRoomId(message.getSenderId(), message.getRecipientId(), true)
@@ -50,6 +56,7 @@ public class MessageService {
         List<Message> result = new ArrayList<>();
         messages.forEach(message -> {
             if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
+                message.setUser(userRepository.findById(message.getSenderId()).orElseThrow(()->new RuntimeException("User not found")));
                 result.add(message);
             }
         });
@@ -86,6 +93,7 @@ public class MessageService {
         List<Message> result = new ArrayList<>();
         messages.forEach(message -> {
             if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
+                message.setUser(userRepository.findById(message.getSenderId()).orElseThrow(()->new RuntimeException("User not found")));
                 result.add(message);
             }
         });
@@ -97,6 +105,7 @@ public class MessageService {
         List<Message> result = new ArrayList<>();
         messages.forEach(message -> {
             if(message.getDeletedUsers()== null || !message.getDeletedUsers().contains(senderId)){
+                message.setUser(userRepository.findById(message.getSenderId()).orElseThrow(()->new RuntimeException("User not found")));
                 result.add(message);
             }
         });

@@ -197,12 +197,14 @@ public class ChatController {
         );
     }
 
-    @MessageMapping("/chat/group")  // /app/chat
-    public void processMessageGroup(@Payload Message message) {//Payload is messageContent
+    @MessageMapping("/chat/group")
+    public void processMessageGroup(@Payload Message message) {
         System.out.println("Message: " + message);
         Message savedMessage = messageService.saveGroup(message);
+        User user = userService.findById(message.getSenderId());
+        savedMessage.setUser(user);
         simpMessagingTemplate.convertAndSendToUser(
-                message.getChatId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                message.getChatId(), "/queue/messages",
                 savedMessage
         );
     }

@@ -35,4 +35,5 @@ public class Message {
     private List<String> deletedUsers = new ArrayList<>();
     private List<String> attachments;
     private List<String> readBy = new ArrayList<>();
+    private User user;
 }
