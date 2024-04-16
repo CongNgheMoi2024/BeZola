@@ -7,6 +7,7 @@ import iuh.cnm.bezola.models.MessageType;
 import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.responses.ApiResponse;
+import iuh.cnm.bezola.responses.RoomMemberResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.RoomService;
@@ -291,5 +292,27 @@ public class RoomController {
                 message.getChatId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
                 savedMessage
         );
+    }
+    @GetMapping("/rooms/members/{roomId}")
+    public ResponseEntity<ApiResponse<?>> getMembers(@PathVariable String roomId) {
+        try {
+            RoomMemberResponse members = roomService.getMembers(roomId);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(members)
+                            .message("Get members success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
     }
 }

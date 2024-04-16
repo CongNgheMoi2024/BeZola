@@ -2,6 +2,7 @@ package iuh.cnm.bezola.service;
 
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.repository.UserRepository;
+import iuh.cnm.bezola.responses.RoomMemberResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.repository.RoomRepository;
@@ -215,5 +216,17 @@ public class RoomService {
             return roomRepository.save(room);
         }
         throw new RuntimeException("You are not admin of this group");
+    }
+
+    public RoomMemberResponse getMembers(String roomId) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        List<User> members = userRepository.findAllById(room.getMembers());
+        List<User> subAdmins = userRepository.findAllById(room.getSubAdmins());
+        User admin = userRepository.findById(room.getAdminId()).orElseThrow(()->new RuntimeException("Admin not found"));
+        return RoomMemberResponse.builder()
+                .admin(admin)
+                .members(members)
+                .subAdmins(subAdmins)
+                .build();
     }
 }
