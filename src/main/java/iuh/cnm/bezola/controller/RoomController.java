@@ -295,6 +295,10 @@ public class RoomController {
                 message.getChatId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
                 savedMessage
         );
+        simpMessagingTemplate.convertAndSendToUser(
+                user.getId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
+                savedMessage
+        );
     }
     @GetMapping("/rooms/members/{roomId}")
     public ResponseEntity<ApiResponse<?>> getMembers(@PathVariable String roomId) {
@@ -323,7 +327,16 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.leaveGroup(roomId, user);
-            processGroup(roomId,MessageType.LEAVE_GROUP,user.getName());
+            Message message = new Message();
+            message.setChatId(roomId);
+            message.setSenderId(user.getId());
+            message.setContent(user.getName() + " đã rời khỏi nhóm");
+            message.setType(MessageType.LEAVE_GROUP);
+            messageService.saveGroup(message);
+            simpMessagingTemplate.convertAndSendToUser(
+                    roomId, "/queue/messages",
+                    message
+            );
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
