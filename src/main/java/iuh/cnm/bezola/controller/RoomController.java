@@ -197,6 +197,30 @@ public class RoomController {
             );
         }
     }
+    @GetMapping("/rooms/{roomId}/sub-admins")
+    public ResponseEntity<ApiResponse<?>> getSubAdmins(@PathVariable String roomId) {
+        try {
+            List<User> subAdmins = roomService.getSubAdmins(roomId);
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .data(subAdmins)
+                            .message("Get sub admins success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
+
+
     @PutMapping("/remove-sub-admin/{roomId}/{userId}")
     public ResponseEntity<ApiResponse<?>> removeSubAdmin(@RequestHeader("Authorization") String token, @PathVariable String roomId, @PathVariable String userId) throws UserException {
         User user = userService.findUserProfileByJwt(token);

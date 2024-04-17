@@ -53,6 +53,11 @@ public class RoomService {
         room.setGroupName(groupName);
         return roomRepository.save(room);
     }
+    public List<User> getSubAdmins(String roomId){
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        return userRepository.findAllById(room.getSubAdmins());
+    }
+
     public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
         Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
