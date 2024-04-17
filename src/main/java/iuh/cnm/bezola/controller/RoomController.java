@@ -46,8 +46,8 @@ public class RoomController {
     public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
         User user = userService.findUserProfileByJwt(token);
         try {
-            roomService.deleteRoom(roomId, user);
             Room room = roomService.getRoomByRoomId(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+            roomService.deleteRoom(roomId, user);
             processGroup(roomId,MessageType.DELETE_GROUP,room.getGroupName());
             return ResponseEntity.ok(
                     ApiResponse.builder()
