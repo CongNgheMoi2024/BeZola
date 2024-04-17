@@ -289,7 +289,7 @@ public class RoomController {
         if(user == null){
             throw new UserException("User not found");
         }
-        message.setContent(sender.getName() +  " đã thêm" + user.getName() + " vào nhóm");
+        message.setContent(sender.getName() +  " đã thêm " + user.getName() + " vào nhóm");
         Message savedMessage = messageService.saveGroup(message);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getChatId(), "/queue/messages",   // /user/{roomId Group}/queue/messages
