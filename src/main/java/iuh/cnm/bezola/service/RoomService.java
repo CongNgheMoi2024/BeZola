@@ -58,6 +58,9 @@ public class RoomService {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         boolean isAdmin = room.getAdminId().equals(reqUser.getId());
         boolean isSubAdmin = room.getSubAdmins().contains(reqUser.getId());
+        if(room.getMembers().size()<4){
+            throw new RuntimeException("Group must have at least 3 members");
+        }
         if (!isAdmin && !isSubAdmin) {
             throw new RuntimeException("You are not admin or sub-admin of this group");
         }
@@ -82,6 +85,7 @@ public class RoomService {
             throw new RuntimeException("User is already admin");
         }
         room.setAdminId(user.getId());
+        room.getSubAdmins().remove(user.getId());
         return roomRepository.save(room);
     }
     public Room leaveGroup(String roomId, User user) {
