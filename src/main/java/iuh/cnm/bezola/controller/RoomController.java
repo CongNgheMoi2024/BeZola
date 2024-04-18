@@ -178,7 +178,7 @@ public class RoomController {
         try {
             Room room = roomService.addSubAdmin(roomId, userId,user);
             User addedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.ADD_SUB_ADMIN,addedUser.getName());
+            processGroup(roomId,MessageType.ADD_SUB_ADMIN,addedUser.getName() + " đã được phân làm phó nhóm");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -227,7 +227,7 @@ public class RoomController {
         try {
             Room room = roomService.removeSubAdmin(roomId, userId,user);
             User removedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,removedUser.getName());
+            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,removedUser.getName() + " đã bị xóa quyền phó nhóm");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -385,7 +385,7 @@ public class RoomController {
         try {
             Room room = roomService.changeAdmin(roomId, userId,user);
             User addedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.CHANGE_ADMIN,addedUser.getName());
+            processGroup(roomId,MessageType.CHANGE_ADMIN,addedUser.getName()+ " đã được phân làm trưởng nhóm");
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
