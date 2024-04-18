@@ -32,7 +32,19 @@ public class RoomController {
     private final MessageService messageService;
 
 //    @MessageMapping("/delete/group")
-    public void processGroup(@Payload String roomId,MessageType type,String content) {
+    public void processGroup(@Payload String roomId,MessageType type,String content,String senderId) {
+        Message message = new Message();
+        message.setChatId(roomId);
+        message.setContent(content);
+        message.setSenderId(senderId);
+        message.setType(type);
+        messageService.saveGroup(message);
+        simpMessagingTemplate.convertAndSendToUser(
+                roomId, "/queue/messages",
+                message
+        );
+    }
+    public void processGroupNotSave(@Payload String roomId,MessageType type,String content) {
         Message message = new Message();
         message.setChatId(roomId);
         message.setContent(content);
@@ -42,13 +54,35 @@ public class RoomController {
                 message
         );
     }
+    @GetMapping("/rooms/{roomId}/call")
+    public ResponseEntity<ApiResponse<?>> callGroup(@PathVariable String roomId,@RequestHeader("Authorization") String token) throws UserException{
+        User user = userService.findUserProfileByJwt(token);
+        try {
+            processGroupNotSave(roomId,MessageType.CALL_VIDEO,user.getName());
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .message("Call group success")
+                            .status(200)
+                            .success(true)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .error(e.getMessage())
+                            .status(400)
+                            .success(false)
+                            .build()
+            );
+        }
+    }
     @DeleteMapping("/delete-room/{roomId}")
     public ResponseEntity<ApiResponse<?>> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) throws UserException {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.getRoomByRoomId(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
             roomService.deleteRoom(roomId, user);
-            processGroup(roomId,MessageType.DELETE_GROUP,room.getGroupName());
+            processGroupNotSave(roomId,MessageType.DELETE_GROUP,room.getGroupName());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .message("Delete room success")
@@ -82,7 +116,7 @@ public class RoomController {
         try {
             String chatId = roomService.createRoomGroup(request.getGroupName(),user.getId(),request.getMembers());
             for (String member : request.getMembers()) {
-                processGroup(member,MessageType.CREATE_GROUP,chatId);
+                processGroupNotSave(member,MessageType.CREATE_GROUP,chatId);
             }
             return ResponseEntity.ok(
                     ApiResponse.builder()
@@ -129,7 +163,7 @@ public class RoomController {
     public ResponseEntity<ApiResponse<?>> renameGroup(@PathVariable String roomId, @RequestBody String groupName) {
         try {
             Room room = roomService.renameGroup(roomId, groupName);
-            processGroup(roomId,MessageType.RENAME_GROUP,groupName);
+            processGroup(roomId,MessageType.RENAME_GROUP,groupName,room.getAdminId());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -178,7 +212,7 @@ public class RoomController {
         try {
             Room room = roomService.addSubAdmin(roomId, userId,user);
             User addedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.ADD_SUB_ADMIN,addedUser.getName() + " đã được phân làm phó nhóm");
+            processGroup(roomId,MessageType.ADD_SUB_ADMIN,addedUser.getName() + " đã được phân làm phó nhóm",user.getId());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -227,7 +261,8 @@ public class RoomController {
         try {
             Room room = roomService.removeSubAdmin(roomId, userId,user);
             User removedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,removedUser.getName() + " đã bị xóa quyền phó nhóm");
+            processGroup(roomId,MessageType.REMOVE_SUB_ADMIN,removedUser.getName() + " đã bị xóa quyền phó nhóm",user.getId());
+
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -351,16 +386,7 @@ public class RoomController {
         User user = userService.findUserProfileByJwt(token);
         try {
             Room room = roomService.leaveGroup(roomId, user);
-            Message message = new Message();
-            message.setChatId(roomId);
-            message.setSenderId(user.getId());
-            message.setContent(user.getName() + " đã rời khỏi nhóm");
-            message.setType(MessageType.LEAVE_GROUP);
-            messageService.saveGroup(message);
-            simpMessagingTemplate.convertAndSendToUser(
-                    roomId, "/queue/messages",
-                    message
-            );
+            processGroup(roomId,MessageType.LEAVE_GROUP,user.getName() + " đã rời nhóm",user.getId());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)
@@ -385,7 +411,7 @@ public class RoomController {
         try {
             Room room = roomService.changeAdmin(roomId, userId,user);
             User addedUser = userService.findById(userId);
-            processGroup(roomId,MessageType.CHANGE_ADMIN,addedUser.getName()+ " đã được phân làm trưởng nhóm");
+            processGroup(roomId,MessageType.CHANGE_ADMIN,addedUser.getName()+ " đã được phân làm trưởng nhóm",user.getId());
             return ResponseEntity.ok(
                     ApiResponse.builder()
                             .data(room)

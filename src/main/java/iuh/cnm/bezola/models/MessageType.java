@@ -14,5 +14,7 @@ public enum MessageType {
     CREATE_GROUP,
     RENAME_GROUP,
     ADD_SUB_ADMIN,
-    REMOVE_SUB_ADMIN, CHANGE_ADMIN,
+    REMOVE_SUB_ADMIN,
+    CHANGE_ADMIN,
+    CALL_VIDEO
 }
