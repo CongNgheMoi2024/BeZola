@@ -8,7 +8,7 @@ api:
   prefix: /api/v1
 
 jwt:
-  expiration: 10800 #1 hour
+  expiration: 43200 #4 hour
   refreshExpiration: 5184000 #60 days
   secretKey : fXgR+2uSB9d+LmMOn5ryQi973KUQmM1AauOZSiHAULc=
 
