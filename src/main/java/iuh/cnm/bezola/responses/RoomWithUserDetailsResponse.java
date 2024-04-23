@@ -5,6 +5,8 @@ import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.models.User;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor

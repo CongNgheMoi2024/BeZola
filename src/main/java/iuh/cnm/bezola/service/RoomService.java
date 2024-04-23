@@ -2,6 +2,7 @@ package iuh.cnm.bezola.service;
 
 import iuh.cnm.bezola.models.User;
 import iuh.cnm.bezola.repository.UserRepository;
+import iuh.cnm.bezola.responses.RoomMemberResponse;
 import iuh.cnm.bezola.responses.RoomWithUserDetailsResponse;
 import iuh.cnm.bezola.models.Room;
 import iuh.cnm.bezola.repository.RoomRepository;
@@ -9,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
-import org.springframework.data.mongodb.core.aggregation.AggregationOperationContext;
-import org.springframework.data.mongodb.core.aggregation.LookupOperation;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
@@ -30,20 +28,24 @@ public class RoomService {
     public String createRoomGroup(String groupName, String adminId, List<String> members){
         members.add(adminId);
         Room room = Room.builder()
-                .chatId(adminId+System.currentTimeMillis())
-                .senderId(adminId)
+                .chatId(adminId)
+                .senderId(null)
                 .isGroup(true)
                 .groupName(groupName)
                 .members(members)
                 .adminId(adminId)
                 .build();
         roomRepository.save(room);
-        return room.getChatId();
+        return room.getId();
     }
-    public Room addUserToGroup(String userId, String roomId) {
+    public Room addUserToGroup(List<String> members, String roomId) {
+        System.out.println("members: "+members);
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
-        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
-        room.getMembers().add(user.getId());
+        if (room.getMembers().containsAll(members)) {
+            throw new RuntimeException("User already in group");
+        }
+
+        room.getMembers().addAll(members);
         return roomRepository.save(room);
     }
     public Room renameGroup(String roomId,String groupName) {
@@ -51,25 +53,57 @@ public class RoomService {
         room.setGroupName(groupName);
         return roomRepository.save(room);
     }
-    public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
+    public List<User> getSubAdmins(String roomId){
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
-        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
-        if(room.getSubAdmins()!=null){
-            if(room.getSubAdmins().contains(reqUser.getId()) && !room.getAdminId().equals(userId)){
-                room.getMembers().remove(userId);
-                return roomRepository.save(room);
-            }
+        return userRepository.findAllById(room.getSubAdmins());
+    }
+
+    public Room removeUserFromGroup(String roomId, String userId, User reqUser) {
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdmin = room.getAdminId().equals(reqUser.getId());
+        boolean isSubAdmin = room.getSubAdmins().contains(reqUser.getId());
+        if(room.getMembers().size()<4){
+            throw new RuntimeException("Group must have at least 3 members");
         }
-        if(room.getAdminId().equals(reqUser.getId())){
-            room.getMembers().remove(user.getId());
-            return roomRepository.save(room);
-        }else if(room.getMembers().contains(reqUser.getId())) {
-            if (reqUser.getId().equals(user.getId())) {
-                room.getMembers().remove(user.getId());
-                return roomRepository.save(room);
-            }
+        if (!isAdmin && !isSubAdmin) {
+            throw new RuntimeException("You are not admin or sub-admin of this group");
         }
-        throw new RuntimeException("You can't remove another user");
+        if (room.getAdminId().equals(userId)) {
+            throw new RuntimeException("Admin can't be removed from group");
+        }
+        if(isSubAdmin && room.getSubAdmins().contains(userId)){
+            throw new RuntimeException("You can't removed another sub-admin");
+        }
+        room.getSubAdmins().remove(user.getId());
+        room.getMembers().remove(user.getId());
+        return roomRepository.save(room);
+    }
+    public Room changeAdmin(String roomId, String userId, User reqUser) {
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        boolean isAdmin = room.getAdminId().equals(reqUser.getId());
+        if (!isAdmin) {
+            throw new RuntimeException("You are not admin of this group");
+        }
+        if (room.getAdminId().equals(userId)) {
+            throw new RuntimeException("User is already admin");
+        }
+        room.setAdminId(user.getId());
+        room.getSubAdmins().remove(user.getId());
+        return roomRepository.save(room);
+    }
+    public Room leaveGroup(String roomId, User user) {
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
+        if (room.getAdminId().equals(user.getId())) {
+            throw new RuntimeException("Admin can't leave group");
+        }
+        if(room.getMembers().size()<4){
+            throw new RuntimeException("Group must have at least 3 members");
+        }
+        room.getSubAdmins().remove(user.getId());
+        room.getMembers().remove(user.getId());
+        return roomRepository.save(room);
     }
     public void deleteRoom(String roomId, User userReq) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
@@ -91,6 +125,16 @@ public class RoomService {
                         return Optional.empty();
                     }
                 });
+    }
+
+    //getRoomByChatId
+    public Optional<String> getRoomById(String id) {
+        return roomRepository.findById(id)
+                .map(Room::getId);
+    }
+
+    public Optional<Room> getRoomByRoomId(String id) {
+        return roomRepository.findById(id);
     }
 
     private String createChatId(String senderId, String recipientId) {
@@ -117,58 +161,71 @@ public class RoomService {
     }
 
     public List<RoomWithUserDetailsResponse> getRoomByUserIdWithRecipientInfo(String userId) {
-        // Bước chuyển đổi recipientId sang ObjectId
+        // Convert recipientId to ObjectId
         AggregationOperation convertRecipientIdToObjectId = new AggregationOperation() {
             @Override
             public Document toDocument(AggregationOperationContext context) {
-                Document projectStage = new Document("$addFields", new Document("recipientIdObjectId", new Document("$toObjectId", "$recipientId")));
-                return projectStage;
+                return new Document("$addFields", new Document("recipientIdObjectId", new Document("$toObjectId", "$recipientId")));
             }
         };
 
+        // Convert chatId to ObjectId
         AggregationOperation convertChatIdToObjectId = new AggregationOperation() {
             @Override
             public Document toDocument(AggregationOperationContext context) {
-                Document projectStage = new Document("$addFields", new Document("chatIdObjectId", new Document("$toObjectId", "$chatId")));
+                Document projectStage = new Document("$addFields", new Document("chatIdObjectId",
+                        new Document("$cond", Arrays.asList(
+                                new Document("$eq", Arrays.asList(new Document("$strLenCP", "$chatId"), 24)),
+                                new Document("$toObjectId", "$chatId"),
+                                "$chatId"  // Use original chatId if it is not 24 characters long
+                        ))
+                ));
                 return projectStage;
             }
         };
 
+        // Initial Match Operation including checking membership in group chats
+        Criteria senderOrRecipient = Criteria.where("senderId").is(userId);
+        Criteria memberInGroup = Criteria.where("isGroup").is(true).and("members").in(userId);
+        MatchOperation matchOperation = Aggregation.match(new Criteria().orOperator(senderOrRecipient, memberInGroup));
+
+        // Lookups and other operations remain unchanged
         LookupOperation lookupOperation = LookupOperation.newLookup()
-                .from("users") // Tên bảng/bộ sưu tập của người dùng
-                .localField("recipientIdObjectId") // Trường trong bảng Room để thực hiện join
-                .foreignField("_id") // Trường tương ứng trong bảng người dùng
-                .as("userRecipient"); // Tên trường output chứa thông tin người dùng
+                .from("users")
+                .localField("recipientIdObjectId") // Note: Adjust based on actual field usage for groups
+                .foreignField("_id")
+                .as("userRecipient");
 
         LookupOperation lookupLastMessage = LookupOperation.newLookup()
-                .from("messages") // Tên bảng/bộ sưu tập của tin nhắn
-                .localField("chatId") // Trường trong bảng Room để thực hiện join
-                .foreignField("chatId") // Trường tương ứng trong bảng tin nhắn
-                .as("lastMessageDetails"); // Tên trường output chứa thông tin tin nhắn
+                .from("messages")
+                .localField("chatIdObjectId") // Using ObjectId version of chatId for consistency
+                .foreignField("chatId")
+                .as("lastMessageDetails");
 
-        // Để lấy tin nhắn cuối cùng, chúng ta cần thêm một bước sắp xếp và lọc
         AggregationOperation filterLastMessage = new AggregationOperation() {
             @Override
             public Document toDocument(AggregationOperationContext context) {
-                Document filter = new Document("$addFields", new Document("lastMessage",
+                return new Document("$addFields", new Document("lastMessage",
                         new Document("$arrayElemAt", Arrays.asList("$lastMessageDetails", -1))));
-                return context.getMappedObject(filter);
             }
         };
 
+        // Final aggregation pipeline
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("senderId").is(userId)),
+                matchOperation,
                 convertRecipientIdToObjectId,
+                convertChatIdToObjectId,
                 lookupOperation,
-                Aggregation.unwind("userRecipient", true), // Giải nén kết quả join với thông tin người dùng
-                lookupLastMessage, // Thực hiện lookup tin nhắn cuối
-                filterLastMessage, // Lọc và lấy tin nhắn cuối cùng
-                Aggregation.unwind("lastMessage", true), // Giải nén kết quả của tin nhắn cuối cùng, nếu cần
+                Aggregation.unwind("userRecipient", true),
+                lookupLastMessage,
+                filterLastMessage,
+                Aggregation.unwind("lastMessage", true),
                 Aggregation.sort(Sort.Direction.DESC, "lastMessage.timestamp")
         );
+
+        // Execute the aggregation
         List<RoomWithUserDetailsResponse> results = mongoTemplate.aggregate(aggregation, "rooms", RoomWithUserDetailsResponse.class).getMappedResults();
 
-        System.out.println(results);
         return results;
     }
 
@@ -188,5 +245,17 @@ public class RoomService {
             return roomRepository.save(room);
         }
         throw new RuntimeException("You are not admin of this group");
+    }
+
+    public RoomMemberResponse getMembers(String roomId) {
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new RuntimeException("Room not found"));
+        List<User> members = userRepository.findAllById(room.getMembers());
+        List<User> subAdmins = userRepository.findAllById(room.getSubAdmins());
+        User admin = userRepository.findById(room.getAdminId()).orElseThrow(()->new RuntimeException("Admin not found"));
+        return RoomMemberResponse.builder()
+                .admin(admin)
+                .members(members)
+                .subAdmins(subAdmins)
+                .build();
     }
 }

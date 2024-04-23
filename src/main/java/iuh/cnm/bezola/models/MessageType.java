@@ -6,5 +6,15 @@ public enum MessageType {
     FILE,
     VIDEO,
     AUDIO,
-    RECALL
+    RECALL,
+    REMOVE_MEMBER,
+    ADD_MEMBER,
+    LEAVE_GROUP,
+    DELETE_GROUP,
+    CREATE_GROUP,
+    RENAME_GROUP,
+    ADD_SUB_ADMIN,
+    REMOVE_SUB_ADMIN,
+    CHANGE_ADMIN,
+    CALL_VIDEO
 }

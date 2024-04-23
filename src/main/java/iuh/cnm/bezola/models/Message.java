@@ -25,6 +25,7 @@ public class Message {
     private String chatId;
     private String senderId;
     private String recipientId;
+    private String replyTo;
     @JsonSerialize(using = DateSerializer.class)
     private Date timestamp;
     private String content;
@@ -34,4 +35,5 @@ public class Message {
     private List<String> deletedUsers = new ArrayList<>();
     private List<String> attachments;
     private List<String> readBy = new ArrayList<>();
+    private User user;
 }

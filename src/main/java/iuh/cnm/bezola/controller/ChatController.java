@@ -75,6 +75,54 @@ public class ChatController {
                 .message("File uploaded successfully")
                 .build());
     }
+
+    @PostMapping(value = "/api/v1/send-file-message-group",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> sendFileMessageGroup(@ModelAttribute("files") List<MultipartFile> files,
+                                             @ModelAttribute("senderId") String senderId,
+                                             @ModelAttribute("chatId") String chatId){
+        List<Message> response = new ArrayList<>();
+        if(files.isEmpty()){
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status(400)
+                    .message("File is required")
+                    .build());
+        }
+        for (MultipartFile file: files) {
+            if(file.getSize()> 100*1024*1024){
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status(400)
+                        .message("File size must be less than 100MB")
+                        .build());
+            }
+            String fileUrl = s3Service.uploadFileToS3(file);
+            String fileName = file.getOriginalFilename();
+            String extension = Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf("."));
+            Message message = new Message();
+            message.setContent(fileUrl);
+            message.setStatus(Status.SENT);
+            message.setChatId(chatId);
+            message.setSenderId(senderId);
+            message.setFileName(fileName);
+            message.setTimestamp(new Date());
+            if (extension.equalsIgnoreCase(".jpg") || extension.equalsIgnoreCase(".jpeg") || extension.equalsIgnoreCase(".png")) {
+                message.setType(MessageType.IMAGE);
+            } else if (extension.equalsIgnoreCase(".mp4") || extension.equalsIgnoreCase(".avi") || extension.equalsIgnoreCase(".mov")) {
+                message.setType(MessageType.VIDEO);
+            } else if (extension.equalsIgnoreCase(".mp3") || extension.equalsIgnoreCase(".wav") || extension.equalsIgnoreCase(".flac")) {
+                message.setType(MessageType.AUDIO);
+            } else {
+                message.setType(MessageType.FILE);
+            }
+            processMessageGroup(message);
+            response.add(message);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .data(response)
+                .status(200)
+                .message("File uploaded successfully")
+                .build());
+    }
+
     @DeleteMapping("/api/v1/recall-messages/{messageId}")
     public ResponseEntity<?> recallMessage(@PathVariable("messageId") String messageId){
         messageService.recallMessage(messageId);
@@ -116,14 +164,65 @@ public class ChatController {
                 .build());
     }
 
+    @PostMapping("/api/v1/forward-messages-group/{messageId}")
+    public ResponseEntity<?> forwardMessagesGroup(@RequestHeader("Authorization") String token,@PathVariable("messageId")String messageId,@RequestBody List<String> roomIds) throws UserException {
+        User user = userService.findUserProfileByJwt(token);
+        Message message = messageService.findById(messageId);
+        for ( String roomId: roomIds) {
+            Message newMessage = new Message();
+            newMessage.setSenderId(user.getId());
+            newMessage.setStatus(Status.SENT);
+            newMessage.setContent(message.getContent());
+            newMessage.setFileName(message.getFileName());
+            newMessage.setType(message.getType());
+            newMessage.setAttachments(message.getAttachments());
+            newMessage.setChatId(roomId);
+            newMessage.setReadBy(new ArrayList<>());
+            newMessage.setTimestamp(new Date());
+            processMessageGroup(newMessage);
+        }
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Message forwarded successfully")
+                .build());
+    }
+
     @MessageMapping("/chat")  // /app/chat
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);
         Message savedMessage = messageService.save(message);
+        savedMessage.getUser().setBirthday(null);
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 savedMessage
         );
+    }
+
+    @MessageMapping("/chat/group")
+    public void processMessageGroup(@Payload Message message) {
+        System.out.println("Message: " + message);
+        Message savedMessage = messageService.saveGroup(message);
+        User user = userService.findById(message.getSenderId());
+        savedMessage.setUser(user);
+        savedMessage.getUser().setBirthday(null);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",
+                savedMessage
+        );
+    }
+
+    @PostMapping("/api/v1/reply-message/{messageId}")
+    public ResponseEntity<?> replyMessage(@PathVariable("messageId") String messageId,@RequestBody Message message) throws UserException {
+        message.setReplyTo(messageId);
+        processMessage(message);
+        return ResponseEntity.ok(message);
+    }
+
+    @PostMapping("/api/v1/reply-message-group/{messageId}")
+    public ResponseEntity<?> replyMessageGroup(@PathVariable("messageId") String messageId,@RequestBody Message message) throws UserException {
+        message.setReplyTo(messageId);
+        processMessageGroup(message);
+        return ResponseEntity.ok(message);
     }
 
     @MessageMapping("/delete") // /app/delete
@@ -137,6 +236,16 @@ public class ChatController {
         );
     }
 
+    @MessageMapping("/delete/group") // /app/delete/group
+    public void deleteMessageGroup(@Payload String messageId) {
+        Message message = messageService.findById(messageId);
+        messageService.recallMessage(messageId);
+        message.setType(MessageType.RECALL);
+        simpMessagingTemplate.convertAndSendToUser(
+                message.getChatId(), "/queue/messages",   // /user/{recipientId}/queue/messages
+                message
+        );
+    }
 
     @GetMapping("/api/v1/messages/{senderId}/{recipientId}")
     public ResponseEntity<ApiResponse<List<Message>>> findMessages(
@@ -166,12 +275,56 @@ public class ChatController {
                         .status(200)
                         .build());
     }
+
+    @GetMapping("/api/v1/image-video-messages-group/{senderId}/{chatId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findImageVideoMessagesGroup(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("chatId") String chatId) {
+        List<Message> messages = messageService.findImageVideoMessagesByChatId(senderId, chatId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
     @GetMapping("/api/v1/file-messages/{senderId}/{recipientId}")
     public ResponseEntity<ApiResponse<List<Message>>> findFileMessages(
             @PathVariable("senderId") String senderId,
             @PathVariable("recipientId") String recipientId
     ) {
         List<Message> messages = messageService.findFileMessages(senderId, recipientId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+
+    @GetMapping("/api/v1/file-messages-group/{senderId}/{chatId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findFileMessagesGroup(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("chatId") String chatId
+    ) {
+        List<Message> messages = messageService.findFileMessages(senderId, chatId);
+
+        return ResponseEntity.ok(
+                ApiResponse.<List<Message>>builder()
+                        .data(messages)
+                        .success(true)
+                        .status(200)
+                        .build());
+    }
+
+    @GetMapping("/api/v1/group-messages/{senderId}/{groupId}")
+    public ResponseEntity<ApiResponse<List<Message>>> findGroupMessages(
+            @PathVariable("senderId") String senderId,
+            @PathVariable("groupId") String groupId
+    ) {
+        List<Message> messages = messageService.findMessagesByChatId(senderId,groupId);
 
         return ResponseEntity.ok(
                 ApiResponse.<List<Message>>builder()
