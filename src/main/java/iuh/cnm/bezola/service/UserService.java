@@ -284,4 +284,28 @@ public class UserService {
     public User findById(String id) {
         return userRepository.findById(id).orElse(null);
     }
+
+    public User saveToken(String jwt, String token) throws UserException {
+        User user = findUserProfileByJwt(jwt);
+        List<String> tokens = user.getTokens();
+        if(tokens == null){
+            tokens = new ArrayList<>();
+        } else {
+            if(tokens.contains(token)){
+                return user;
+            }
+        }
+
+        tokens.add(token);
+        user.setTokens(tokens);
+        return userRepository.save(user);
+    }
+
+    public List<String> findTokensByUserId(String id) {
+        User user = userRepository.findById(id).orElse(null);
+        if(user == null){
+            return null;
+        }
+        return user.getTokens();
+    }
 }

@@ -39,6 +39,7 @@ public class User implements UserDetails {
     private List<String> friends;
     //list phone book
     private List<PhoneBook> phoneBooks;
+    private List<String> tokens;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
