@@ -2,6 +2,7 @@ package iuh.cnm.bezola.service;
 
 import com.google.firebase.FirebaseException;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import iuh.cnm.bezola.dto.NotificationMessage;
@@ -34,10 +35,11 @@ public class FirebaseMessageService {
         try {
             firebaseMessaging.send(message);
             return "Notification has been sent successfully!";
-        } catch (FirebaseException e) {
-            e.printStackTrace();
-            return "Notification has been failed to send!";
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
+
+        return "Failed to send notification!";
     }
 
     public User saveToken(String jwt, String token) {
