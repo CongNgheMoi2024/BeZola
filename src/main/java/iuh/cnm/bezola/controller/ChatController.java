@@ -196,7 +196,7 @@ public class ChatController {
         List<String> tokens = userService.findTokensByUserId(message.getRecipientId());
         System.out.println("Tokens: " + tokens);
         //if tokens is empty, it means the recipient is offline
-        if (!tokens.isEmpty()) {
+        if (tokens != null) {
             for (String token: tokens) {
                 Map<String, String> data = Map.of(
                         "senderId", message.getSenderId(),
