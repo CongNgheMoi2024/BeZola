@@ -195,20 +195,23 @@ public class ChatController {
         User user = userService.findById(message.getSenderId());
         List<String> tokens = userService.findTokensByUserId(message.getRecipientId());
         System.out.println("Tokens: " + tokens);
-        for (String token: tokens) {
-            Map<String, String> data = Map.of(
-                    "senderId", message.getSenderId(),
-                    "recipientId", message.getRecipientId(),
-                    "content", message.getContent(),
-                    "timestamp", String.valueOf(message.getTimestamp().getTime())
-            );
-            NotificationMessage notificationMessage = NotificationMessage.builder()
-                    .title("New message from " + user.getName())
-                    .body(message.getContent())
-                    .recipientToken(token)
-                    .data(data)
-                    .build();
-            firebaseMessageService.sendNotificationByToken(notificationMessage);
+        //if tokens is empty, it means the recipient is offline
+        if (!tokens.isEmpty()) {
+            for (String token: tokens) {
+                Map<String, String> data = Map.of(
+                        "senderId", message.getSenderId(),
+                        "recipientId", message.getRecipientId(),
+                        "content", message.getContent(),
+                        "timestamp", String.valueOf(message.getTimestamp().getTime())
+                );
+                NotificationMessage notificationMessage = NotificationMessage.builder()
+                        .title("New message from " + user.getName())
+                        .body(message.getContent())
+                        .recipientToken(token)
+                        .data(data)
+                        .build();
+                firebaseMessageService.sendNotificationByToken(notificationMessage);
+            }
         }
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
