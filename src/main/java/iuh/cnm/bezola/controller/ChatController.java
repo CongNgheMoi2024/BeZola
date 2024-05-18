@@ -3,6 +3,7 @@ package iuh.cnm.bezola.controller;
 import iuh.cnm.bezola.exceptions.UserException;
 import iuh.cnm.bezola.models.*;
 import iuh.cnm.bezola.responses.ApiResponse;
+import iuh.cnm.bezola.service.FirebaseMessageService;
 import iuh.cnm.bezola.service.MessageService;
 import iuh.cnm.bezola.service.S3Service;
 import iuh.cnm.bezola.service.UserService;
@@ -15,11 +16,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import iuh.cnm.bezola.dto.NotificationMessage;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,6 +27,7 @@ public class ChatController {
     private final MessageService messageService;
     private final S3Service s3Service;
     private final UserService userService;
+    private final FirebaseMessageService firebaseMessageService;
 
     @PostMapping(value = "/api/v1/send-file-message",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> sendFileMessage(@ModelAttribute("files") List<MultipartFile> files,
@@ -191,7 +191,28 @@ public class ChatController {
     public void processMessage(@Payload Message message) {//Payload is messageContent
         System.out.println("Message: " + message);
         Message savedMessage = messageService.save(message);
-        savedMessage.getUser().setBirthday(null);
+        System.out.println("Saved message: " + savedMessage);
+        User user = userService.findById(message.getSenderId());
+        List<String> tokens = userService.findTokensByUserId(message.getRecipientId());
+        System.out.println("Tokens: " + tokens);
+        //if tokens is empty, it means the recipient is offline
+        if (tokens != null) {
+            for (String token: tokens) {
+                Map<String, String> data = Map.of(
+                        "senderId", message.getSenderId(),
+                        "recipientId", message.getRecipientId(),
+                        "content", message.getContent(),
+                        "timestamp", String.valueOf(message.getTimestamp().getTime())
+                );
+                NotificationMessage notificationMessage = NotificationMessage.builder()
+                        .title("New message from " + user.getName())
+                        .body(message.getContent())
+                        .recipientToken(token)
+                        .data(data)
+                        .build();
+                firebaseMessageService.sendNotificationByToken(notificationMessage);
+            }
+        }
         simpMessagingTemplate.convertAndSendToUser(
                 message.getRecipientId(), "/queue/messages",   // /user/{recipientId}/queue/messages
                 savedMessage
