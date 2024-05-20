@@ -23,6 +23,11 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(request -> {
                     request.requestMatchers(HttpMethod.GET,"/heartbeat").authenticated()
                             .requestMatchers("/**").permitAll();
+                })
+                .headers(headers -> {
+                    headers
+                            .frameOptions().disable() // Disable X-Frame-Options
+                            .contentSecurityPolicy("frame-ancestors *"); // Allow framing from any domain
                 });
         return http.build();
     }
